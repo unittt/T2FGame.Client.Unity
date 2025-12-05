@@ -1,0 +1,21 @@
+{
+  "name": "com.t2fgame.client",
+  "version": "1.0.0",
+  "displayName": "T2FGame Client SDK",
+  "description": "T2FGame 游戏客户端 SDK，基于 UniTask 的高性能网络通信框架",
+  "unity": "2022.3.14f1",
+  "author": {
+    "name": "unittt",
+    "url": "https://github.com/unittt"
+  },
+  "keywords": [
+    "game",
+    "network",
+    "tcp",
+    "protobuf",
+    "unitask"
+  ],
+  "dependencies": {
+    // 不声明任何依赖
+  }
+}

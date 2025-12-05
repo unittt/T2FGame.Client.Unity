@@ -1,15 +1,16 @@
 using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf;
+using T2FGame.Client.Utils;
 using T2FGame.Protocol;
 
 namespace T2FGame.Client.Protocol
 {
-    
+
     /// <summary>
     /// 对 ExternalMessage 的封装，提供安全的访问器与缓存。
     /// </summary>
-    public sealed class ResponseMessage
+    public sealed class ResponseMessage : IPoolable
     {
         private ExternalMessage _message;
 
@@ -43,13 +44,43 @@ namespace T2FGame.Client.Protocol
         /// </summary>
         public bool Success { get; private set; }
 
-        public void Initialize(byte[] bytes)
+        
+        public void Initialize(ExternalMessage message)
         {
-            _message = ExternalMessage.Parser.ParseFrom(bytes);
+            _message = message;
             CommandType = _message.CmdCode == 0 ? CommandType.Heartbeat : CommandType.Business;
 
             ResponseStatus = _message?.ResponseStatus ?? 0;
             HasError = ResponseStatus != 0;
+            Success = ResponseStatus == 0;
+        }
+
+        /// <summary>
+        /// 重置响应消息状态（用于对象池回收）
+        /// </summary>
+        public void Reset()
+        {
+            _message = null;
+            CommandType = CommandType.Business;
+            ResponseStatus = 0;
+            HasError = false;
+            Success = false;
+        }
+
+        /// <summary>
+        /// IPoolable: 从池中取出时调用
+        /// </summary>
+        public void OnSpawn()
+        {
+            // 对象从池中取出时不需要特殊处理，Initialize 会设置所有属性
+        }
+
+        /// <summary>
+        /// IPoolable: 归还到池中时调用
+        /// </summary>
+        public void OnDespawn()
+        {
+            Reset();
         }
 
         /// <summary>

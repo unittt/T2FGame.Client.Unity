@@ -5,11 +5,11 @@ using Google.Protobuf;
 
 namespace T2FGame.Client.Protocol
 {
-    
+
     /// <summary>
     /// 表示一个网络请求命令，用于封装客户端向服务器发送的消息。
     /// </summary>
-    public sealed class RequestCommand
+    public sealed class RequestCommand : IPoolable
     {
         /// <summary>
         /// 获取消息标记号。该字段由前端在发起请求时设置，
@@ -64,6 +64,22 @@ namespace T2FGame.Client.Protocol
             CmdMerge = 0;
             Data = ByteString.Empty;
             CommandType = CommandType.Business;
+        }
+
+        /// <summary>
+        /// IPoolable: 从池中取出时调用
+        /// </summary>
+        public void OnSpawn()
+        {
+            // 对象从池中取出时不需要特殊处理，Initialize 会设置所有属性
+        }
+
+        /// <summary>
+        /// IPoolable: 归还到池中时调用
+        /// </summary>
+        public void OnDespawn()
+        {
+            Reset();
         }
 
         #region  xxxxxx

@@ -71,7 +71,7 @@ namespace T2FGame.Client.Network
             if (_isClosed)
                 throw new InvalidOperationException("Client has been closed");
 
-            if (State == ConnectionState.Connected || State == ConnectionState.Connecting)
+            if (State is ConnectionState.Connected or ConnectionState.Connecting)
             {
                 GameLogger.LogWarning("[GameClient] Already connected or connecting");
                 return;

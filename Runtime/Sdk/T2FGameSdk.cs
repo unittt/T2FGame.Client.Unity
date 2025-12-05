@@ -27,17 +27,7 @@ namespace T2FGame.Client.Sdk
         /// </summary>
         public static T2FGameSdk Instance
         {
-            get
-            {
-                if (_instance == null)
-                {
-                    lock (_lock)
-                    {
-                        _instance ??= new T2FGameSdk();
-                    }
-                }
-                return _instance;
-            }
+            get { return _instance ??= new T2FGameSdk(); }
         }
 
         /// <summary>

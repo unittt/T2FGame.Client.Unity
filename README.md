@@ -617,7 +617,6 @@ public class GameNetworkManager : MonoBehaviour
 
     private void SubscribeMessages()
     {
-        // 使用 2.0 新增的订阅功能（推荐）
         T2FGameSdk.Instance.Subscribe<ChatMessage>(3001, OnChatMessage);
         T2FGameSdk.Instance.Subscribe<SystemNotification>(3002, OnSystemNotification);
         T2FGameSdk.Instance.Subscribe<GoldChangeNotification>(3003, OnGoldChanged);

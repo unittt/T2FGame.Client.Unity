@@ -214,10 +214,7 @@ namespace T2FGame.Client.Network
         /// <param name="command">请求命令</param>
         /// <param name="cancellationToken">取消令牌</param>
         /// <returns>响应消息</returns>
-        public async UniTask<ResponseMessage> RequestAsync(
-            RequestCommand command,
-            CancellationToken cancellationToken = default
-        )
+        public async UniTask<ResponseMessage> RequestAsync(RequestCommand command, CancellationToken cancellationToken = default)
         {
             if (_disposed)
                 throw new ObjectDisposedException(nameof(GameClient));
@@ -231,7 +228,7 @@ namespace T2FGame.Client.Network
             var tcs = new UniTaskCompletionSource<ResponseMessage>();
 
             // 注册等待响应
-            if (!_pendingRequests.TryAdd(command.MsgId, tcs))
+            if (command.CommandType == CommandType.Business && !_pendingRequests.TryAdd(command.MsgId, tcs))
             {
                 throw new InvalidOperationException($"Duplicate MsgId: {command.MsgId}");
             }
@@ -333,7 +330,7 @@ namespace T2FGame.Client.Network
                 GameLogger.Log("[GameClient] Heartbeat response received");
                 return;
             }
-
+            
             // 创建响应消息
             var response = ReferencePool<ResponseMessage>.Spawn();
             response.Initialize(message);
@@ -341,13 +338,12 @@ namespace T2FGame.Client.Network
             // 尝试匹配等待的请求
             if (_pendingRequests.TryRemove(message.MsgId, out var tcs))
             {
+                // 匹配到请求，设置响应结果
                 tcs.TrySetResult(response);
             }
-            else
-            {
-                // 服务器主动推送的消息
-                OnMessageReceived?.Invoke(message);
-            }
+            
+            // 触发消息接收事件（所有业务消息都触发，包括请求响应和服务器推送）
+            OnMessageReceived?.Invoke(message);
         }
 
         private void OnChannelDisconnect(IProtocolChannel channel)

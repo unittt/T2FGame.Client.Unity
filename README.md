@@ -5,9 +5,8 @@
 [![Unity Version](https://img.shields.io/badge/Unity-2022.3%2B-blue.svg)](https://unity.com/)
 [![.NET](https://img.shields.io/badge/.NET-Standard%202.1-purple.svg)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.0.0-orange.svg)](package.json)
 
-**高性能、跨平台、现代化的 Unity 游戏客户端网络 SDK**
+**高性能、模块化、跨平台的 Unity 游戏客户端网络 SDK**
 
 [特性](#-核心特性) • [安装](#-安装) • [快速开始](#-快速开始) • [文档](#-api-文档) • [示例](#-完整示例)
 
@@ -22,7 +21,8 @@ T2FGame Client SDK 是一个专为 Unity 游戏开发设计的**独立、轻量�
 ### 设计理念
 
 - **🎯 独立性**：零业务依赖，不依赖任何游戏框架，可在任意 Unity 项目中使用
-- **⚡ 高性能**：基于 UniTask 的零 GC 异步编程，线程安全的并发设计
+- **🏗️ 模块化**：采用三层管理器架构（连接、路由、请求分离），职责清晰，易于维护
+- **⚡ 高性能**：基于 UniTask 的零 GC 异步编程，multicast delegate 高效订阅机制
 - **🌐 跨平台**：支持 TCP、UDP、WebSocket，适配桌面、移动、WebGL 等所有平台
 - **🔧 易用性**：简洁的 API 设计，符合 C#/.NET 最佳实践
 - **🛡️ 可靠性**：完善的错误处理、自动重连、心跳保活机制
@@ -35,7 +35,13 @@ T2FGame Client SDK 是一个专为 Unity 游戏开发设计的**独立、轻量�
 - ✅ **多协议支持**：TCP、UDP、WebSocket（自动适配平台）
 - ✅ **Protobuf 序列化**：基于 ioGame 协议的高效序列化
 - ✅ **请求-响应模型**：支持 async/await 异步请求，自动匹配响应
-- ✅ **服务器推送**：支持服务器主动推送消息
+- ✅ **回调模式**：支持 Send<TRequest, TResponse>(callback) 回调式请求
+- ✅ **服务器推送**：支持 cmdMerge 消息订阅和自动分发
+
+### 模块化架构
+- ✅ **ConnectionManager**：专注连接管理、状态监控、自动重连
+- ✅ **MessageRouter**：高性能消息路由，支持泛型自动解包
+- ✅ **RequestManager**：统一请求管理，支持三种请求模式
 
 ### 连接管理
 - ✅ **自动重连**：可配置的指数退避重连策略
@@ -204,27 +210,61 @@ public void SendChatMessage(string message)
 }
 ```
 
-### 4. 接收服务器推送
+### 4. 订阅服务器推送消息
 
 ```csharp
 private void Start()
 {
-    // 订阅服务器推送消息
-    T2FGameSdk.Instance.OnMessageReceived += OnServerPush;
+    // 方式 1: 订阅并自动解包为指定类型（推荐）
+    int chatCmdMerge = CmdKit.GetMergeCmd(2, 1);
+    T2FGameSdk.Instance.Subscribe<ChatMessage>(chatCmdMerge, OnChatMessage);
+
+    // 方式 2: 订阅原始消息
+    T2FGameSdk.Instance.Subscribe(chatCmdMerge, message =>
+    {
+        var chatMsg = ProtoSerializer.Deserialize<ChatMessage>(message.Data);
+        Debug.Log($"收到聊天: {chatMsg.Content}");
+    });
 }
 
-private void OnServerPush(ExternalMessage message)
+private void OnChatMessage(ChatMessage msg)
 {
-    Debug.Log($"收到服务器推送：CmdMerge={message.CmdMerge}");
+    Debug.Log($"[{msg.Sender}]: {msg.Content}");
+}
 
-    // 根据 CmdMerge 处理不同消息
-    switch (message.CmdMerge)
+// 取消订阅
+private void OnDestroy()
+{
+    int chatCmdMerge = CmdKit.GetMergeCmd(2, 1);
+    T2FGameSdk.Instance.Unsubscribe(chatCmdMerge);
+}
+```
+
+### 5. 使用回调模式发送请求
+
+```csharp
+// 适合 UI 响应场景，避免 async/await 嵌套
+public void OnLoginButtonClick()
+{
+    var request = new LoginRequest
     {
-        case 3001: // 聊天消息推送
-            var chatMsg = ProtoSerializer.Deserialize<ChatMessage>(message.Data);
-            Debug.Log($"收到聊天：{chatMsg.Content}");
-            break;
-    }
+        Username = usernameInput.text,
+        Password = passwordInput.text
+    };
+
+    int loginCmdMerge = CmdKit.GetMergeCmd(1, 1);
+
+    // 发送请求并设置回调
+    T2FGameSdk.Instance.Send<LoginRequest, LoginResponse>(
+        loginCmdMerge,
+        request,
+        response =>
+        {
+            // 收到响应后的处理
+            Debug.Log($"登录成功! Token: {response.Token}");
+            EnterGameScene();
+        }
+    );
 }
 ```
 
@@ -297,6 +337,34 @@ void SendInt(int cmdMerge, int value)
 void SendString(int cmdMerge, string value)
 void SendLong(int cmdMerge, long value)
 void SendBool(int cmdMerge, bool value)
+```
+
+#### 带回调的发送
+
+```csharp
+// 发送请求并在收到响应时执行回调
+void Send<TRequest, TResponse>(
+    int cmdMerge,
+    TRequest request,
+    Action<TResponse> callback
+) where TRequest : IMessage where TResponse : IMessage, new()
+```
+
+#### 消息订阅
+
+```csharp
+// 订阅原始消息
+void Subscribe(int cmdMerge, Action<ExternalMessage> callback)
+
+// 订阅并自动解包为指定类型（推荐）
+void Subscribe<TMessage>(int cmdMerge, Action<TMessage> callback)
+    where TMessage : IMessage, new()
+
+// 取消订阅（传 null 则取消该 cmdMerge 的所有订阅）
+void Unsubscribe(int cmdMerge, Action<ExternalMessage> callback = null)
+
+// 取消所有订阅
+void UnsubscribeAll()
 ```
 
 #### 属性与事件
@@ -437,6 +505,9 @@ public class GameNetworkManager : MonoBehaviour
         T2FGameSdk.Instance.OnMessageReceived += OnServerPush;
         T2FGameSdk.Instance.OnError += OnNetworkError;
 
+        // 订阅服务器推送消息
+        SubscribeMessages();
+
         try
         {
             await T2FGameSdk.Instance.ConnectAsync();
@@ -542,40 +613,29 @@ public class GameNetworkManager : MonoBehaviour
     private void OnServerPush(ExternalMessage message)
     {
         Debug.Log($"📨 收到服务器推送：CmdMerge={message.CmdMerge}");
-
-        // 根据消息类型处理
-        switch (message.CmdMerge)
-        {
-            case 3001: // 聊天消息
-                HandleChatMessage(message);
-                break;
-
-            case 3002: // 系统通知
-                HandleSystemNotification(message);
-                break;
-
-            case 3003: // 金币变化
-                HandleGoldChanged(message);
-                break;
-        }
     }
 
-    private void HandleChatMessage(ExternalMessage message)
+    private void SubscribeMessages()
     {
-        var chatMsg = ProtoSerializer.Deserialize<ChatMessage>(message.Data);
+        // 使用 2.0 新增的订阅功能（推荐）
+        T2FGameSdk.Instance.Subscribe<ChatMessage>(3001, OnChatMessage);
+        T2FGameSdk.Instance.Subscribe<SystemNotification>(3002, OnSystemNotification);
+        T2FGameSdk.Instance.Subscribe<GoldChangeNotification>(3003, OnGoldChanged);
+    }
+
+    private void OnChatMessage(ChatMessage chatMsg)
+    {
         Debug.Log($"💬 [{chatMsg.Sender}]: {chatMsg.Content}");
         // 显示聊天消息...
     }
 
-    private void HandleSystemNotification(ExternalMessage message)
+    private void OnSystemNotification(SystemNotification notification)
     {
-        var notification = ProtoSerializer.Deserialize<SystemNotification>(message.Data);
         ShowNotification(notification.Message);
     }
 
-    private void HandleGoldChanged(ExternalMessage message)
+    private void OnGoldChanged(GoldChangeNotification goldChange)
     {
-        var goldChange = ProtoSerializer.Deserialize<GoldChangeNotification>(message.Data);
         Debug.Log($"💰 金币变化：{goldChange.Delta} (总计: {goldChange.TotalGold})");
         UpdateGoldUI(goldChange.TotalGold);
     }
@@ -591,9 +651,13 @@ public class GameNetworkManager : MonoBehaviour
         _cts?.Cancel();
         _cts?.Dispose();
 
+        // 取消事件订阅
         T2FGameSdk.Instance.OnStateChanged -= OnConnectionStateChanged;
         T2FGameSdk.Instance.OnMessageReceived -= OnServerPush;
         T2FGameSdk.Instance.OnError -= OnNetworkError;
+
+        // 取消消息订阅
+        T2FGameSdk.Instance.UnsubscribeAll();
 
         T2FGameSdk.Instance.Close();
     }
@@ -612,6 +676,38 @@ public class GameNetworkManager : MonoBehaviour
 
 ## 🏗️ 架构设计
 
+### 模块化架构
+
+T2FGameSdk 采用**职责分离**的三层管理器架构：
+
+```
+┌────────────────────────────────────────────────────┐
+│              T2FGameSdk (主入口)                    │
+│  - 单例模式                                         │
+│  - 初始化和生命周期管理                              │
+│  - 事件转发和协调                                   │
+└────────────────────────────────────────────────────┘
+                        │
+        ┌───────────────┼───────────────┐
+        │               │               │
+        ▼               ▼               ▼
+┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+│ConnectionMgr │ │ MessageRouter│ │ RequestMgr   │
+│              │ │              │ │              │
+│- 连接管理    │ │- 消息路由    │ │- 请求管理    │
+│- 状态监控    │ │- 订阅/分发   │ │- 回调处理    │
+│- 重连逻辑    │ │- 高效分发    │ │- 超时处理    │
+└──────────────┘ └──────────────┘ └──────────────┘
+```
+
+**核心优势**：
+- ✅ **职责分离**：每个管理器专注单一职责
+- ✅ **高性能**：MessageRouter 使用 multicast delegate，零分配
+- ✅ **可测试**：每个管理器可独立测试
+- ✅ **可扩展**：易于添加新管理器
+
+详细架构说明：[ARCHITECTURE.md](Runtime/Sdk/ARCHITECTURE.md)
+
 ### 分层架构
 
 ```
@@ -622,7 +718,7 @@ public class GameNetworkManager : MonoBehaviour
                      ↓
 ┌─────────────────────────────────────────────┐
 │         SDK 层（T2FGameSdk）                 │
-│      (高层 API 封装、单例管理)                │
+│  ConnectionMgr + MessageRouter + RequestMgr │
 └─────────────────────────────────────────────┘
                      ↓
 ┌─────────────────────────────────────────────┐
@@ -646,6 +742,9 @@ public class GameNetworkManager : MonoBehaviour
 | 组件 | 职责 |
 |------|------|
 | **T2FGameSdk** | SDK 主入口，单例管理，提供高层 API |
+| **ConnectionManager** | 连接管理、状态监控、自动重连 |
+| **MessageRouter** | 消息路由、订阅管理、高效分发 |
+| **RequestManager** | 请求发送、回调处理、超时管理 |
 | **GameClient** | 核心客户端，管理连接、消息、心跳、重连 |
 | **IProtocolChannel** | 传输层抽象接口，支持多种协议 |
 | **PacketCodec** | ioGame 协议编解码器 |
@@ -836,6 +935,7 @@ var options = new GameClientOptions
 ```
 
 ---
+
 
 ## 📄 许可证
 

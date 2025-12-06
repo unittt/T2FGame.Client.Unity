@@ -1,10 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf;
+using T2FGame.Client.Protocol;
 using T2FGame.Client.Utils;
 using T2FGame.Protocol;
 
-namespace T2FGame.Client.Protocol
+namespace T2FGame.Client.Sdk
 {
     /// <summary>
     /// 对 ExternalMessage 的封装，提供安全的访问器与缓存。

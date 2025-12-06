@@ -1,4 +1,4 @@
-namespace T2FGame.Client.Protocol
+namespace T2FGame.Client.Sdk
 {
     /// <summary>
     /// 命令类型枚举

@@ -1,6 +1,6 @@
 using System.Threading;
 
-namespace T2FGame.Client.Protocol
+namespace T2FGame.Client.Sdk
 {
     /// <summary>
     /// 消息ID管理器

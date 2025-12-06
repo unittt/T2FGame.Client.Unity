@@ -3,14 +3,14 @@ using Google.Protobuf;
 using T2FGame.Client.Utils;
 using T2FGame.Protocol;
 
-namespace T2FGame.Client.Protocol
+namespace T2FGame.Client.Sdk
 {
     /// <summary>
     /// 表示一个网络请求命令，用于封装客户端向服务器发送的消息。
     /// </summary>
     public sealed class RequestCommand : IPoolable
     {
-        private static readonly ByteString EmptyByteString = ByteString.Empty;
+        private static readonly ByteString _emptyByteString = ByteString.Empty;
 
         /// <summary>
         /// 获取消息标记号。该字段由前端在发起请求时设置，
@@ -41,26 +41,9 @@ namespace T2FGame.Client.Protocol
         )
         {
             CmdMerge = cmdMerge;
-            Data = data ?? EmptyByteString;
+            Data = data ?? _emptyByteString;
             CommandType = commandType;
             MsgId = commandType == CommandType.Heartbeat ? 0 : MsgIdManager.GenerateNextMsgId();
-        }
-
-        /// <summary>
-        /// 将当前请求命令封装成字节数组以便在网络中传输。
-        /// 使用 ExternalMessage 对象作为中间结构体完成序列化操作。
-        /// </summary>
-        /// <returns>表示整个请求命令的字节数组。</returns>
-        public byte[] Encapsulate()
-        {
-            var externalMsg = new ExternalMessage
-            {
-                CmdCode = (int)CommandType,
-                CmdMerge = CmdMerge,
-                MsgId = MsgId,
-                Data = Data,
-            };
-            return externalMsg.ToByteArray();
         }
 
         /// <summary>
@@ -70,7 +53,7 @@ namespace T2FGame.Client.Protocol
         {
             MsgId = 0;
             CmdMerge = 0;
-            Data = EmptyByteString;
+            Data = _emptyByteString;
             CommandType = CommandType.Business;
         }
 
@@ -104,7 +87,7 @@ namespace T2FGame.Client.Protocol
         /// 创建一个新的请求命令实例，并指定其业务路由标识。
         /// 数据部分为空，命令类型默认为业务类型。
         /// </summary>
-        public static RequestCommand Of(int cmdMerge) => Of(cmdMerge, EmptyByteString);
+        public static RequestCommand Of(int cmdMerge) => Of(cmdMerge, _emptyByteString);
 
         /// <summary>
         /// 创建一个新的请求命令实例，并指定其业务路由标识及 Protobuf 消息数据。
@@ -112,7 +95,7 @@ namespace T2FGame.Client.Protocol
         /// </summary>
         public static RequestCommand Of(int cmdMerge, IMessage message)
         {
-            var byteString = message?.ToByteString() ?? EmptyByteString;
+            var byteString = message?.ToByteString() ?? _emptyByteString;
             return Of(cmdMerge, byteString);
         }
 
@@ -120,7 +103,7 @@ namespace T2FGame.Client.Protocol
         /// 创建一个专门用于心跳检测的请求命令实例。
         /// 路由标识为 0，数据为空，命令类型为心跳。
         /// </summary>
-        public static RequestCommand Heartbeat() => Of(0, EmptyByteString, CommandType.Heartbeat);
+        public static RequestCommand Heartbeat() => Of(0, _emptyByteString, CommandType.Heartbeat);
 
         /// <summary>
         /// 创建一个包含整型数值的请求命令实例。

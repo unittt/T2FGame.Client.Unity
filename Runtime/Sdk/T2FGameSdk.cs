@@ -1,11 +1,10 @@
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Google.Protobuf;
 using T2FGame.Client.Network;
-using T2FGame.Client.Protocol;
 using T2FGame.Client.Utils;
 using T2FGame.Protocol;
-using Google.Protobuf;
 
 namespace T2FGame.Client.Sdk
 {
@@ -18,8 +17,11 @@ namespace T2FGame.Client.Sdk
         private static T2FGameSdk _instance;
         private static readonly object _lock = new();
 
-        private GameClient _client;
-        private GameClientOptions _options;
+        // 三大核心管理器
+        private ConnectionManager _connectionManager;
+        private MessageRouter _messageRouter;
+        private RequestManager _requestManager;
+
         private volatile bool _initialized;
         private volatile bool _disposed;
 
@@ -28,23 +30,29 @@ namespace T2FGame.Client.Sdk
         /// </summary>
         public static T2FGameSdk Instance
         {
-            get { return _instance ??= new T2FGameSdk(); }
+            get
+            {
+                lock (_lock)
+                {
+                    return _instance ??= new T2FGameSdk();
+                }
+            }
         }
 
         /// <summary>
         /// 获取游戏客户端实例
         /// </summary>
-        public GameClient Client => _client;
+        public GameClient Client => _connectionManager?.Client;
 
         /// <summary>
         /// 获取当前连接状态
         /// </summary>
-        public ConnectionState State => _client?.State ?? ConnectionState.Disconnected;
+        public ConnectionState State => _connectionManager?.State ?? ConnectionState.Disconnected;
 
         /// <summary>
         /// 是否已连接
         /// </summary>
-        public bool IsConnected => _client?.IsConnected ?? false;
+        public bool IsConnected => _connectionManager?.IsConnected ?? false;
 
         /// <summary>
         /// 是否已初始化
@@ -57,7 +65,7 @@ namespace T2FGame.Client.Sdk
         public event Action<ConnectionState> OnStateChanged;
 
         /// <summary>
-        /// 收到服务器推送消息事件
+        /// 收到服务器推送消息事件（原始消息）
         /// </summary>
         public event Action<ExternalMessage> OnMessageReceived;
 
@@ -67,6 +75,8 @@ namespace T2FGame.Client.Sdk
         public event Action<Exception> OnError;
 
         private T2FGameSdk() { }
+
+        #region 初始化和连接
 
         /// <summary>
         /// 初始化 SDK
@@ -83,13 +93,19 @@ namespace T2FGame.Client.Sdk
                 return;
             }
 
-            _options = options?.Clone() ?? new GameClientOptions();
-            _client = new GameClient(_options);
+            // 初始化三大管理器
+            _connectionManager = new ConnectionManager();
+            _messageRouter = new MessageRouter();
+            _requestManager = new RequestManager(_connectionManager);
 
-            // 订阅客户端事件
-            _client.OnStateChanged += HandleStateChanged;
-            _client.OnMessageReceived += HandleMessageReceived;
-            _client.OnError += HandleError;
+            // 初始化连接管理器
+            _connectionManager.Initialize(options);
+
+            // 订阅事件
+            _connectionManager.OnStateChanged += HandleStateChanged;
+            _connectionManager.OnError += HandleError;
+            _connectionManager.Client.OnMessageReceived += HandleMessageReceived;
+            _requestManager.OnError += HandleError;
 
             _initialized = true;
             GameLogger.Log("[T2FGameSdk] SDK 初始化完成");
@@ -101,7 +117,7 @@ namespace T2FGame.Client.Sdk
         public async UniTask ConnectAsync()
         {
             EnsureInitialized();
-            await _client.ConnectAsync();
+            await _connectionManager.ConnectAsync();
         }
 
         /// <summary>
@@ -112,25 +128,7 @@ namespace T2FGame.Client.Sdk
         public async UniTask ConnectAsync(string host, int port)
         {
             EnsureInitialized();
-
-            _options.Host = host;
-            _options.Port = port;
-
-            // 重新创建客户端以应用新配置
-            if (_client != null)
-            {
-                _client.OnStateChanged -= HandleStateChanged;
-                _client.OnMessageReceived -= HandleMessageReceived;
-                _client.OnError -= HandleError;
-                _client.Dispose();
-            }
-
-            _client = new GameClient(_options);
-            _client.OnStateChanged += HandleStateChanged;
-            _client.OnMessageReceived += HandleMessageReceived;
-            _client.OnError += HandleError;
-
-            await _client.ConnectAsync();
+            await _connectionManager.ConnectAsync(host, port);
         }
 
         /// <summary>
@@ -138,9 +136,9 @@ namespace T2FGame.Client.Sdk
         /// </summary>
         public async UniTask DisconnectAsync()
         {
-            if (_client == null)
+            if (!_initialized)
                 return;
-            await _client.DisconnectAsync();
+            await _connectionManager.DisconnectAsync();
         }
 
         /// <summary>
@@ -148,105 +146,94 @@ namespace T2FGame.Client.Sdk
         /// </summary>
         public void Close()
         {
-            _client?.Close();
+            _connectionManager?.Close();
         }
+
+        #endregion
+
+        #region 异步请求 (RequestAsync)
 
         /// <summary>
         /// 发送请求并等待响应
         /// </summary>
-        /// <param name="cmdMerge">命令路由标识</param>
-        /// <param name="cancellationToken">取消令牌</param>
-        /// <returns>响应消息</returns>
         public async UniTask<ResponseMessage> RequestAsync(
             int cmdMerge,
             CancellationToken cancellationToken = default
         )
         {
-            EnsureConnected();
-            var command = RequestCommand.Of(cmdMerge);
-            return await _client.RequestAsync(command, cancellationToken);
+            EnsureInitialized();
+            return await _requestManager.RequestAsync(cmdMerge, cancellationToken);
         }
 
         /// <summary>
         /// 发送请求并等待响应
         /// </summary>
-        /// <typeparam name="TRequest">请求类型</typeparam>
-        /// <param name="cmdMerge">命令路由标识</param>
-        /// <param name="request">请求数据</param>
-        /// <param name="cancellationToken">取消令牌</param>
-        /// <returns>响应消息</returns>
-        public async UniTask<ResponseMessage> RequestAsync<TRequest>(int cmdMerge, TRequest request, CancellationToken cancellationToken = default) where TRequest : IMessage
+        public async UniTask<ResponseMessage> RequestAsync<TRequest>(
+            int cmdMerge,
+            TRequest request,
+            CancellationToken cancellationToken = default
+        )
+            where TRequest : IMessage
         {
-            EnsureConnected();
-            var command = RequestCommand.Of(cmdMerge, request);
-            return await _client.RequestAsync(command, cancellationToken);
+            EnsureInitialized();
+            return await _requestManager.RequestAsync(cmdMerge, request, cancellationToken);
         }
 
         /// <summary>
         /// 发送请求并等待响应（获取指定类型的响应数据）
         /// </summary>
-        /// <typeparam name="TResponse">响应类型</typeparam>
-        /// <param name="cmdMerge">命令路由标识</param>
-        /// <param name="cancellationToken">取消令牌</param>
-        /// <returns>响应数据</returns>
-        public async UniTask<TResponse> RequestAsync<TResponse>(int cmdMerge, CancellationToken cancellationToken = default) where TResponse : IMessage, new()
+        public async UniTask<TResponse> RequestAsync<TResponse>(
+            int cmdMerge,
+            CancellationToken cancellationToken = default
+        )
+            where TResponse : IMessage, new()
         {
-            var response = await RequestAsync(cmdMerge, cancellationToken);
-
-            if (response.HasError)
-            {
-                throw new Exception($"Request failed with status: {response.ResponseStatus}");
-            }
-
-            return response.GetValue<TResponse>();
+            EnsureInitialized();
+            return await _requestManager.RequestAsync<TResponse>(cmdMerge, cancellationToken);
         }
 
         /// <summary>
         /// 发送请求并等待响应（获取指定类型的响应数据）
         /// </summary>
-        /// <typeparam name="TRequest">请求类型</typeparam>
-        /// <typeparam name="TResponse">响应类型</typeparam>
-        /// <param name="cmdMerge">命令路由标识</param>
-        /// <param name="request">请求数据</param>
-        /// <param name="cancellationToken">取消令牌</param>
-        /// <returns>响应数据</returns>
-        public async UniTask<TResponse> RequestAsync<TRequest, TResponse>(int cmdMerge, TRequest request, CancellationToken cancellationToken = default) where TRequest : IMessage where TResponse : IMessage, new()
+        public async UniTask<TResponse> RequestAsync<TRequest, TResponse>(
+            int cmdMerge,
+            TRequest request,
+            CancellationToken cancellationToken = default
+        )
+            where TRequest : IMessage
+            where TResponse : IMessage, new()
         {
-            var response = await RequestAsync(cmdMerge, request, cancellationToken);
-
-            if (response.HasError)
-            {
-                throw new Exception($"Request failed with status: {response.ResponseStatus}");
-            }
-
-            return response.GetValue<TResponse>();
+            EnsureInitialized();
+            return await _requestManager.RequestAsync<TRequest, TResponse>(
+                cmdMerge,
+                request,
+                cancellationToken
+            );
         }
+
+        #endregion
+
+        #region 发送不等待响应 (Send)
 
         /// <summary>
         /// 发送请求（仅发送，不等待响应）
         /// </summary>
-        /// <param name="cmdMerge">命令路由标识</param>
         public void Send(int cmdMerge)
         {
-            if (!IsConnected)
+            if (!IsInitialized)
                 return;
-            var command = RequestCommand.Of(cmdMerge);
-            _client.SendRequest(command);
+            _requestManager.Send(cmdMerge);
         }
 
         /// <summary>
         /// 发送请求（仅发送，不等待响应）
         /// </summary>
-        /// <typeparam name="TRequest">请求类型</typeparam>
-        /// <param name="cmdMerge">命令路由标识</param>
-        /// <param name="request">请求数据</param>
         public void Send<TRequest>(int cmdMerge, TRequest request)
-            where TRequest : Google.Protobuf.IMessage
+            where TRequest : IMessage
         {
-            if (!IsConnected)
+            if (!IsInitialized)
                 return;
-            var command = RequestCommand.Of(cmdMerge, request);
-            _client.SendRequest(command);
+            _requestManager.Send(cmdMerge, request);
         }
 
         /// <summary>
@@ -254,10 +241,9 @@ namespace T2FGame.Client.Sdk
         /// </summary>
         public void SendInt(int cmdMerge, int value)
         {
-            if (!IsConnected)
+            if (!IsInitialized)
                 return;
-            var command = RequestCommand.OfInt(cmdMerge, value);
-            _client.SendRequest(command);
+            _requestManager.SendInt(cmdMerge, value);
         }
 
         /// <summary>
@@ -265,10 +251,9 @@ namespace T2FGame.Client.Sdk
         /// </summary>
         public void SendString(int cmdMerge, string value)
         {
-            if (!IsConnected)
+            if (!IsInitialized)
                 return;
-            var command = RequestCommand.OfString(cmdMerge, value);
-            _client.SendRequest(command);
+            _requestManager.SendString(cmdMerge, value);
         }
 
         /// <summary>
@@ -276,10 +261,9 @@ namespace T2FGame.Client.Sdk
         /// </summary>
         public void SendLong(int cmdMerge, long value)
         {
-            if (!IsConnected)
+            if (!IsInitialized)
                 return;
-            var command = RequestCommand.OfLong(cmdMerge, value);
-            _client.SendRequest(command);
+            _requestManager.SendLong(cmdMerge, value);
         }
 
         /// <summary>
@@ -287,11 +271,85 @@ namespace T2FGame.Client.Sdk
         /// </summary>
         public void SendBool(int cmdMerge, bool value)
         {
-            if (!IsConnected)
+            if (!IsInitialized)
                 return;
-            var command = RequestCommand.OfBool(cmdMerge, value);
-            _client.SendRequest(command);
+            _requestManager.SendBool(cmdMerge, value);
         }
+
+        #endregion
+
+        #region 带回调的发送 (Send with Callback)
+
+        /// <summary>
+        /// 发送请求并在收到响应时执行回调
+        /// </summary>
+        public void Send<TRequest, TResponse>(
+            int cmdMerge,
+            TRequest request,
+            Action<TResponse> callback
+        )
+            where TRequest : IMessage
+            where TResponse : IMessage, new()
+        {
+            if (!IsInitialized)
+                return;
+            _requestManager.Send(cmdMerge, request, callback);
+        }
+
+        #endregion
+
+        #region 消息订阅 (Subscribe)
+
+        /// <summary>
+        /// 订阅指定 cmdMerge 的服务器推送消息
+        /// </summary>
+        public void Subscribe(int cmdMerge, Action<ExternalMessage> callback)
+        {
+            EnsureInitialized();
+            _messageRouter.Subscribe(cmdMerge, callback);
+        }
+
+        /// <summary>
+        /// 订阅指定 cmdMerge 的服务器推送消息（泛型版本，自动解包）
+        /// </summary>
+        public void Subscribe<TMessage>(int cmdMerge, Action<TMessage> callback)
+            where TMessage : IMessage, new()
+        {
+            EnsureInitialized();
+            _messageRouter.Subscribe(cmdMerge, callback);
+        }
+
+        /// <summary>
+        /// 取消订阅指定 cmdMerge 的消息
+        /// </summary>
+        public void Unsubscribe(int cmdMerge, Action<ExternalMessage> callback = null)
+        {
+            if (!IsInitialized)
+                return;
+
+            if (callback == null)
+            {
+                _messageRouter.Clear(cmdMerge);
+            }
+            else
+            {
+                _messageRouter.Unsubscribe(cmdMerge, callback);
+            }
+        }
+
+        /// <summary>
+        /// 取消所有消息订阅
+        /// </summary>
+        public void UnsubscribeAll()
+        {
+            if (!IsInitialized)
+                return;
+            _messageRouter.ClearAll();
+        }
+
+        #endregion
+
+        #region 事件处理
 
         private void HandleStateChanged(ConnectionState state)
         {
@@ -300,13 +358,29 @@ namespace T2FGame.Client.Sdk
 
         private void HandleMessageReceived(ExternalMessage message)
         {
+            // 先触发通用的消息接收事件
             OnMessageReceived?.Invoke(message);
+
+            // 然后通过路由器分发给订阅者
+            try
+            {
+                _messageRouter.Dispatch(message);
+            }
+            catch (Exception ex)
+            {
+                GameLogger.LogError($"[T2FGameSdk] Message dispatch error: {ex.Message}");
+                OnError?.Invoke(ex);
+            }
         }
 
         private void HandleError(Exception ex)
         {
             OnError?.Invoke(ex);
         }
+
+        #endregion
+
+        #region 工具方法
 
         private void EnsureInitialized()
         {
@@ -317,13 +391,9 @@ namespace T2FGame.Client.Sdk
                 throw new InvalidOperationException("SDK 未初始化，请先调用 Initialize()");
         }
 
-        private void EnsureConnected()
-        {
-            EnsureInitialized();
+        #endregion
 
-            if (!IsConnected)
-                throw new InvalidOperationException("未连接到服务器");
-        }
+        #region Dispose
 
         public void Dispose()
         {
@@ -340,14 +410,29 @@ namespace T2FGame.Client.Sdk
 
             if (disposing)
             {
-                if (_client != null)
+                // 取消订阅事件
+                if (_connectionManager != null)
                 {
-                    _client.OnStateChanged -= HandleStateChanged;
-                    _client.OnMessageReceived -= HandleMessageReceived;
-                    _client.OnError -= HandleError;
-                    _client.Dispose();
-                    _client = null;
+                    _connectionManager.OnStateChanged -= HandleStateChanged;
+                    _connectionManager.OnError -= HandleError;
+                    if (_connectionManager.Client != null)
+                    {
+                        _connectionManager.Client.OnMessageReceived -= HandleMessageReceived;
+                    }
                 }
+
+                if (_requestManager != null)
+                {
+                    _requestManager.OnError -= HandleError;
+                }
+
+                // 释放管理器
+                _connectionManager?.Dispose();
+                _messageRouter?.ClearAll();
+
+                _connectionManager = null;
+                _messageRouter = null;
+                _requestManager = null;
 
                 _initialized = false;
             }
@@ -371,5 +456,7 @@ namespace T2FGame.Client.Sdk
         {
             Dispose(false);
         }
+
+        #endregion
     }
 }

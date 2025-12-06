@@ -39,7 +39,7 @@ namespace T2FGame.Client.Sdk
                 _routes[cmdMerge] = handler;
             }
 
-            GameLogger.Log($"[MessageRouter] Subscribed to cmdMerge: {cmdMerge}");
+            GameLogger.Log($"[MessageRouter] 已订阅 cmdMerge: {cmdMerge}");
         }
 
         /// <summary>
@@ -65,9 +65,7 @@ namespace T2FGame.Client.Sdk
                     }
                     catch (Exception ex)
                     {
-                        GameLogger.LogError(
-                            $"[MessageRouter] Failed to unpack message: {ex.Message}"
-                        );
+                        GameLogger.LogError($"[MessageRouter] 解包消息失败: {ex.Message}");
                     }
                 }
             );
@@ -96,7 +94,7 @@ namespace T2FGame.Client.Sdk
                 _routes[cmdMerge] = updated;
             }
 
-            GameLogger.Log($"[MessageRouter] Unsubscribed from cmdMerge: {cmdMerge}");
+            GameLogger.Log($"[MessageRouter] 已取消订阅 cmdMerge: {cmdMerge}");
         }
 
         /// <summary>
@@ -118,7 +116,7 @@ namespace T2FGame.Client.Sdk
             catch (Exception ex)
             {
                 GameLogger.LogError(
-                    $"[MessageRouter] Handler exception for cmdMerge {message.CmdMerge}: {ex.Message}"
+                    $"[MessageRouter] 处理器异常 cmdMerge {message.CmdMerge}: {ex.Message}"
                 );
                 throw; // 重新抛出异常，让外层处理
             }
@@ -131,7 +129,7 @@ namespace T2FGame.Client.Sdk
         public void Clear(int cmdMerge)
         {
             _routes.Remove(cmdMerge);
-            GameLogger.Log($"[MessageRouter] Cleared all subscriptions for cmdMerge: {cmdMerge}");
+            GameLogger.Log($"[MessageRouter] 已清除 cmdMerge 的所有订阅: {cmdMerge}");
         }
 
         /// <summary>
@@ -140,7 +138,7 @@ namespace T2FGame.Client.Sdk
         public void ClearAll()
         {
             _routes.Clear();
-            GameLogger.Log("[MessageRouter] Cleared all subscriptions");
+            GameLogger.Log("[MessageRouter] 已清除所有订阅");
         }
 
         /// <summary>

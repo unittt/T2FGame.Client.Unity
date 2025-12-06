@@ -16,7 +16,7 @@
 
 ## 📖 项目简介
 
-T2FGame Client SDK 是一个专为 Unity 游戏开发设计的**独立、轻量、高性能**的网络通信框架。它基于 **ioGame 协议**，提供完整的客户端网络功能，包括连接管理、消息收发、心跳保活、自动重连等。
+T2FGame Client SDK 是一个专为 Unity 游戏开发设计的**独立、轻量、高性能**的网络通信框架。它基于 **Protobuf协议**，提供完整的客户端网络功能，包括连接管理、消息收发、心跳保活、自动重连等。
 
 ### 设计理念
 
@@ -33,7 +33,7 @@ T2FGame Client SDK 是一个专为 Unity 游戏开发设计的**独立、轻量�
 
 ### 网络通信
 - ✅ **多协议支持**：TCP、UDP、WebSocket（自动适配平台）
-- ✅ **Protobuf 序列化**：基于 ioGame 协议的高效序列化
+- ✅ **Protobuf 序列化**：基于 Protobuf协议的高效序列化
 - ✅ **请求-响应模型**：支持 async/await 异步请求，自动匹配响应
 - ✅ **回调模式**：支持 Send<TRequest, TResponse>(callback) 回调式请求
 - ✅ **服务器推送**：支持 cmdMerge 消息订阅和自动分发
@@ -66,7 +66,7 @@ T2FGame Client SDK 是一个专为 Unity 游戏开发设计的**独立、轻量�
 2. 点击 `+` → `Add package from git URL...`
 3. 输入：
 ```
-https://github.com/your-repo/T2FGame.Client.Unity.git
+https://github.com/unittt/T2FGame.Client.Unity.git
 ```
 
 ### 方式 2：本地安装
@@ -104,7 +104,6 @@ https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask
 https://github.com/psygames/UnityWebSocket.git#upm
 ```
 
-> **💡 提示**：如果你的项目只在桌面/移动平台运行（不需要 WebGL），UnityWebSocket 依赖是可选的。但为了跨平台兼容性，建议安装。
 
 ---
 
@@ -682,9 +681,9 @@ T2FGameSdk 采用**职责分离**的三层管理器架构：
 ```
 ┌────────────────────────────────────────────────────┐
 │              T2FGameSdk (主入口)                    │
-│  - 单例模式                                         │
-│  - 初始化和生命周期管理                              │
-│  - 事件转发和协调                                   │
+│  - 单例模式                                          │
+│  - 初始化和生命周期管理                                │
+│  - 事件转发和协调                                     │
 └────────────────────────────────────────────────────┘
                         │
         ┌───────────────┼───────────────┐
@@ -699,20 +698,12 @@ T2FGameSdk 采用**职责分离**的三层管理器架构：
 └──────────────┘ └──────────────┘ └──────────────┘
 ```
 
-**核心优势**：
-- ✅ **职责分离**：每个管理器专注单一职责
-- ✅ **高性能**：MessageRouter 使用 multicast delegate，零分配
-- ✅ **可测试**：每个管理器可独立测试
-- ✅ **可扩展**：易于添加新管理器
-
-详细架构说明：[ARCHITECTURE.md](Runtime/Sdk/ARCHITECTURE.md)
-
 ### 分层架构
 
 ```
 ┌─────────────────────────────────────────────┐
-│           业务逻辑层（Game Logic）           │
-│         (登录、战斗、聊天等业务代码)          │
+│           业务逻辑层（Game Logic）             │
+│         (登录、战斗、聊天等业务代码)             │
 └─────────────────────────────────────────────┘
                      ↓
 ┌─────────────────────────────────────────────┐
@@ -721,18 +712,18 @@ T2FGameSdk 采用**职责分离**的三层管理器架构：
 └─────────────────────────────────────────────┘
                      ↓
 ┌─────────────────────────────────────────────┐
-│       客户端层（GameClient）                 │
-│  (连接管理、消息路由、心跳、重连)              │
+│        客户端层（GameClient）                  │
+│  (连接管理、消息路由、心跳、重连)                 │
 └─────────────────────────────────────────────┘
                      ↓
 ┌─────────────────────────────────────────────┐
 │       传输层（IProtocolChannel）              │
-│    (TCP/UDP/WebSocket 协议实现)              │
+│      (TCP/UDP/WebSocket 协议实现)            │
 └─────────────────────────────────────────────┘
                      ↓
 ┌─────────────────────────────────────────────┐
 │         协议层（PacketCodec）                 │
-│      (ioGame 协议编解码、粘包处理)            │
+│         (协议编解码、粘包处理)                  │
 └─────────────────────────────────────────────┘
 ```
 
@@ -746,7 +737,7 @@ T2FGameSdk 采用**职责分离**的三层管理器架构：
 | **RequestManager** | 请求发送、回调处理、超时管理 |
 | **GameClient** | 核心客户端，管理连接、消息、心跳、重连 |
 | **IProtocolChannel** | 传输层抽象接口，支持多种协议 |
-| **PacketCodec** | ioGame 协议编解码器 |
+| **PacketCodec** | 协议编解码器 |
 | **PacketBuffer** | TCP 粘包处理缓冲区 |
 | **RequestCommand** | 请求命令封装 |
 | **ResponseMessage** | 响应消息封装 |
@@ -932,33 +923,3 @@ var options = new GameClientOptions
     EnableLog = false  // 关闭日志，提升性能
 };
 ```
-
----
-
-
-## 📄 许可证
-
-本项目采用 [MIT License](LICENSE) 开源协议。
-
----
-
-## 🤝 贡献
-
-欢迎提交 Issue 和 Pull Request！
-
----
-
-## 📮 联系方式
-
-- **作者**：unittt
-- **GitHub**：[https://github.com/unittt](https://github.com/unittt)
-
----
-
-<div align="center">
-
-**⭐ 如果这个项目对你有帮助，请给个 Star！⭐**
-
-Made with ❤️ by unittt
-
-</div>

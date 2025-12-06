@@ -189,7 +189,7 @@ namespace T2FGame.Client.Sdk
         {
             if (!_connectionManager.IsConnected)
             {
-                GameLogger.LogWarning("[RequestManager] Not connected, cannot send request");
+                GameLogger.LogWarning("[RequestManager] 未连接，无法发送请求");
                 return;
             }
 
@@ -222,7 +222,7 @@ namespace T2FGame.Client.Sdk
             }
             catch (Exception ex)
             {
-                GameLogger.LogError($"[RequestManager] Send with callback failed: {ex.Message}");
+                GameLogger.LogError($"[RequestManager] 带回调的发送失败: {ex.Message}");
                 OnError?.Invoke(ex);
             }
         }

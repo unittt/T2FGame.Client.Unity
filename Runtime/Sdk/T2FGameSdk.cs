@@ -368,7 +368,7 @@ namespace T2FGame.Client.Sdk
             }
             catch (Exception ex)
             {
-                GameLogger.LogError($"[T2FGameSdk] Message dispatch error: {ex.Message}");
+                GameLogger.LogError($"[T2FGameSdk] 消息分发错误: {ex.Message}");
                 OnError?.Invoke(ex);
             }
         }

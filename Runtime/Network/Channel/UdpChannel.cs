@@ -47,7 +47,7 @@ namespace T2FGame.Client.Network.Channel
         {
             if (Client != null && _isBound)
             {
-                GameLogger.LogWarning("[UdpChannel] Already connected");
+                GameLogger.LogWarning("[UdpChannel] 已连接");
                 return;
             }
 
@@ -84,12 +84,12 @@ namespace T2FGame.Client.Network.Channel
                 // 使用基类的连接方法（会设置 Client 和 _isConnected）
                 base.Connect(host, port);
 
-                GameLogger.Log($"[UdpChannel] Connected to {host}:{port}");
+                GameLogger.Log($"[UdpChannel] 已连接到 {host}:{port}");
             }
             catch (Exception ex)
             {
                 _isBound = false;
-                GameLogger.LogError($"[UdpChannel] Connect failed: {ex.Message}");
+                GameLogger.LogError($"[UdpChannel] 连接失败: {ex.Message}");
                 throw;
             }
         }
@@ -141,7 +141,7 @@ namespace T2FGame.Client.Network.Channel
                 // 错误码 10054 (WSAECONNRESET) 在 UDP 中表示目标不可达
                 if (ex.SocketErrorCode == SocketError.ConnectionReset)
                 {
-                    GameLogger.LogWarning($"[UdpChannel] ICMP error received: {ex.Message}");
+                    GameLogger.LogWarning($"[UdpChannel] 收到 ICMP 错误: {ex.Message}");
                     return null; // 忽略，继续接收
                 }
                 throw;

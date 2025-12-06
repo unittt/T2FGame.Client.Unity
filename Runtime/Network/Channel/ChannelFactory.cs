@@ -29,7 +29,7 @@ namespace T2FGame.Client.Network.Channel
                 ),
             };
 
-            GameLogger.Log($"[ChannelFactory] Created {channelType} channel");
+            GameLogger.Log($"[ChannelFactory] 已创建 {channelType} 通道");
             return channel;
         }
 

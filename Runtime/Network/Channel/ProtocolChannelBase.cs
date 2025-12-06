@@ -103,7 +103,7 @@ namespace T2FGame.Client.Network.Channel
             };
             _receiveThread.Start();
 
-            GameLogger.Log($"[{ChannelType}Channel] Initialized");
+            GameLogger.Log($"[{ChannelType}Channel] 初始化完成");
         }
 
         private void ReceiveThreadLoop()
@@ -221,7 +221,7 @@ namespace T2FGame.Client.Network.Channel
 
             if (IsConnected)
             {
-                GameLogger.LogWarning($"[{ChannelType}Channel] Already connected");
+                GameLogger.LogWarning($"[{ChannelType}Channel] 已连接");
                 return;
             }
 
@@ -239,11 +239,11 @@ namespace T2FGame.Client.Network.Channel
                 Client.Connect(endPoint);
                 _isConnected = true;
 
-                GameLogger.Log($"[{ChannelType}Channel] Connected to {host}:{port}");
+                GameLogger.Log($"[{ChannelType}Channel] 已连接到 {host}:{port}");
             }
             catch (Exception ex)
             {
-                GameLogger.LogError($"[{ChannelType}Channel] Connect failed: {ex.Message}");
+                GameLogger.LogError($"[{ChannelType}Channel] 连接失败: {ex.Message}");
                 _isConnected = false;
                 throw;
             }
@@ -273,7 +273,7 @@ namespace T2FGame.Client.Network.Channel
                 Client = null;
 
                 InvokeOnMainThread(() => DisconnectServerEvent?.Invoke(this));
-                GameLogger.Log($"[{ChannelType}Channel] Disconnected");
+                GameLogger.Log($"[{ChannelType}Channel] 已断开连接");
             }
         }
 
@@ -284,7 +284,7 @@ namespace T2FGame.Client.Network.Channel
 
             if (!IsConnected)
             {
-                GameLogger.LogWarning($"[{ChannelType}Channel] Cannot send: not connected");
+                GameLogger.LogWarning($"[{ChannelType}Channel] 无法发送：未连接");
                 return;
             }
 
@@ -364,7 +364,7 @@ namespace T2FGame.Client.Network.Channel
                 while (_receiveQueue.TryDequeue(out _)) { }
             }
 
-            GameLogger.Log($"[{ChannelType}Channel] Disposed");
+            GameLogger.Log($"[{ChannelType}Channel] 已释放");
         }
 
         ~ProtocolChannelBase()

@@ -47,14 +47,14 @@ namespace T2FGame.Client.Network.Channel
         public void OnInit()
         {
             _isDisposed = false;
-            GameLogger.Log("[WebSocketChannel] Initialized");
+            GameLogger.Log("[WebSocketChannel] 初始化完成");
         }
 
         public void Connect(string host, int port)
         {
             if (_isDisposed)
             {
-                GameLogger.LogError("[WebSocketChannel] Channel is disposed");
+                GameLogger.LogError("[WebSocketChannel] 通道已释放");
                 return;
             }
 
@@ -62,7 +62,7 @@ namespace T2FGame.Client.Network.Channel
             {
                 if (IsConnected || _isConnecting)
                 {
-                    GameLogger.LogWarning("[WebSocketChannel] Already connected or connecting");
+                    GameLogger.LogWarning("[WebSocketChannel] 已连接或正在连接中");
                     return;
                 }
 
@@ -99,12 +99,12 @@ namespace T2FGame.Client.Network.Channel
                 _socket.OnError += OnError;
                 _socket.ConnectAsync();
 
-                GameLogger.Log($"[WebSocketChannel] Connecting to {wsUrl}");
+                GameLogger.Log($"[WebSocketChannel] 正在连接到 {wsUrl}");
             }
             catch (Exception ex)
             {
                 _isConnecting = false;
-                GameLogger.LogError($"[WebSocketChannel] Connect failed: {ex.Message}");
+                GameLogger.LogError($"[WebSocketChannel] 连接失败: {ex.Message}");
                 throw;
             }
         }
@@ -129,13 +129,13 @@ namespace T2FGame.Client.Network.Channel
             }
             catch (Exception ex)
             {
-                GameLogger.LogWarning($"[WebSocketChannel] Disconnect error: {ex.Message}");
+                GameLogger.LogWarning($"[WebSocketChannel] 断开连接错误: {ex.Message}");
             }
             finally
             {
                 CleanupSocket();
                 DisconnectServerEvent?.Invoke(this);
-                GameLogger.Log("[WebSocketChannel] Disconnected");
+                GameLogger.Log("[WebSocketChannel] 已断开连接");
             }
         }
 
@@ -146,7 +146,7 @@ namespace T2FGame.Client.Network.Channel
 
             if (!IsConnected || _socket == null)
             {
-                GameLogger.LogWarning("[WebSocketChannel] Cannot send: not connected");
+                GameLogger.LogWarning("[WebSocketChannel] 无法发送：未连接");
                 return;
             }
 
@@ -157,7 +157,7 @@ namespace T2FGame.Client.Network.Channel
             }
             catch (Exception ex)
             {
-                GameLogger.LogError($"[WebSocketChannel] Send failed: {ex.Message}");
+                GameLogger.LogError($"[WebSocketChannel] 发送失败: {ex.Message}");
             }
         }
 
@@ -171,7 +171,7 @@ namespace T2FGame.Client.Network.Channel
 
             if (!IsConnected || _socket == null)
             {
-                GameLogger.LogWarning("[WebSocketChannel] Cannot send: not connected");
+                GameLogger.LogWarning("[WebSocketChannel] 无法发送：未连接");
                 return;
             }
 
@@ -190,7 +190,7 @@ namespace T2FGame.Client.Network.Channel
         {
             _isConnecting = false;
             IsConnected = true;
-            GameLogger.Log("[WebSocketChannel] Connected");
+            GameLogger.Log("[WebSocketChannel] 已连接");
         }
 
         private void OnClose(object sender, CloseEventArgs e)
@@ -199,7 +199,7 @@ namespace T2FGame.Client.Network.Channel
             IsConnected = false;
             _isConnecting = false;
 
-            GameLogger.Log($"[WebSocketChannel] Closed: Code={e.Code}, Reason={e.Reason}");
+            GameLogger.Log($"[WebSocketChannel] 已关闭: Code={e.Code}, Reason={e.Reason}");
 
             if (wasConnected)
             {
@@ -210,7 +210,7 @@ namespace T2FGame.Client.Network.Channel
         private void OnError(object sender, ErrorEventArgs e)
         {
             _isConnecting = false;
-            GameLogger.LogError($"[WebSocketChannel] Error: {e.Message}");
+            GameLogger.LogError($"[WebSocketChannel] 错误: {e.Message}");
 
             // 如果连接时出错，触发断开事件
             if (IsConnected)
@@ -267,7 +267,7 @@ namespace T2FGame.Client.Network.Channel
 
             _isDisposed = true;
             Disconnect();
-            GameLogger.Log("[WebSocketChannel] Disposed");
+            GameLogger.Log("[WebSocketChannel] 已释放");
         }
     }
 }

@@ -51,7 +51,7 @@ namespace T2FGame.Client.Sdk
 
             if (_client != null)
             {
-                GameLogger.LogWarning("[ConnectionManager] Already initialized");
+                GameLogger.LogWarning("[ConnectionManager] 已初始化");
                 return;
             }
 
@@ -62,7 +62,7 @@ namespace T2FGame.Client.Sdk
             _client.OnStateChanged += HandleStateChanged;
             _client.OnError += HandleError;
 
-            GameLogger.Log("[ConnectionManager] Initialized");
+            GameLogger.Log("[ConnectionManager] 初始化完成");
         }
 
         /// <summary>
@@ -161,7 +161,7 @@ namespace T2FGame.Client.Sdk
                 _client = null;
             }
 
-            GameLogger.Log("[ConnectionManager] Disposed");
+            GameLogger.Log("[ConnectionManager] 已释放");
         }
     }
 }

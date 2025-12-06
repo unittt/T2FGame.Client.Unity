@@ -46,7 +46,7 @@ namespace T2FGame.Client.Network
                     return;
                 var oldState = _state;
                 _state = value;
-                GameLogger.Log($"[GameClient] State changed: {oldState} -> {value}");
+                GameLogger.Log($"[GameClient] 连接状态变化: {oldState} -> {value}");
                 OnStateChanged?.Invoke(value);
             }
         }
@@ -77,7 +77,7 @@ namespace T2FGame.Client.Network
 
             if (State is ConnectionState.Connected or ConnectionState.Connecting)
             {
-                GameLogger.LogWarning("[GameClient] Already connected or connecting");
+                GameLogger.LogWarning("[GameClient] 已连接或正在连接中");
                 return;
             }
 
@@ -116,7 +116,7 @@ namespace T2FGame.Client.Network
                 // 启动心跳
                 StartHeartbeat();
 
-                GameLogger.Log($"[GameClient] Connected to {_options.Host}:{_options.Port}");
+                GameLogger.Log($"[GameClient] 已连接到 {_options.Host}:{_options.Port}");
             }
             catch (OperationCanceledException)
             {
@@ -130,7 +130,7 @@ namespace T2FGame.Client.Network
             catch (Exception ex)
             {
                 State = ConnectionState.Disconnected;
-                GameLogger.LogError($"[GameClient] Connect failed: {ex.Message}");
+                GameLogger.LogError($"[GameClient] 连接失败: {ex.Message}");
                 OnError?.Invoke(ex);
                 throw;
             }
@@ -176,7 +176,7 @@ namespace T2FGame.Client.Network
             State = ConnectionState.Closed;
             ClearPendingRequests(new OperationCanceledException("Client closed"));
 
-            GameLogger.Log("[GameClient] Closed");
+            GameLogger.Log("[GameClient] 已关闭");
         }
 
         public async UniTask SendAsync(
@@ -202,7 +202,7 @@ namespace T2FGame.Client.Network
             }
             catch (Exception ex)
             {
-                GameLogger.LogError($"[GameClient] Send failed: {ex.Message}");
+                GameLogger.LogError($"[GameClient] 发送失败: {ex.Message}");
                 OnError?.Invoke(ex);
                 throw;
             }
@@ -214,7 +214,10 @@ namespace T2FGame.Client.Network
         /// <param name="command">请求命令</param>
         /// <param name="cancellationToken">取消令牌</param>
         /// <returns>响应消息</returns>
-        public async UniTask<ResponseMessage> RequestAsync(RequestCommand command, CancellationToken cancellationToken = default)
+        public async UniTask<ResponseMessage> RequestAsync(
+            RequestCommand command,
+            CancellationToken cancellationToken = default
+        )
         {
             if (_disposed)
                 throw new ObjectDisposedException(nameof(GameClient));
@@ -228,7 +231,10 @@ namespace T2FGame.Client.Network
             var tcs = new UniTaskCompletionSource<ResponseMessage>();
 
             // 注册等待响应
-            if (command.CommandType == CommandType.Business && !_pendingRequests.TryAdd(command.MsgId, tcs))
+            if (
+                command.CommandType == CommandType.Business
+                && !_pendingRequests.TryAdd(command.MsgId, tcs)
+            )
             {
                 throw new InvalidOperationException($"Duplicate MsgId: {command.MsgId}");
             }
@@ -312,7 +318,7 @@ namespace T2FGame.Client.Network
             }
             catch (Exception ex)
             {
-                GameLogger.LogError($"[GameClient] Process message failed: {ex.Message}");
+                GameLogger.LogError($"[GameClient] 处理消息失败: {ex.Message}");
                 OnError?.Invoke(ex);
             }
         }
@@ -327,10 +333,10 @@ namespace T2FGame.Client.Network
             {
                 // 心跳响应，重置超时计数
                 _heartbeatTimeoutCount = 0;
-                GameLogger.Log("[GameClient] Heartbeat response received");
+                GameLogger.Log("[GameClient] 收到心跳响应");
                 return;
             }
-            
+
             // 创建响应消息
             var response = ReferencePool<ResponseMessage>.Spawn();
             response.Initialize(message);
@@ -341,7 +347,7 @@ namespace T2FGame.Client.Network
                 // 匹配到请求，设置响应结果
                 tcs.TrySetResult(response);
             }
-            
+
             // 触发消息接收事件（所有业务消息都触发，包括请求响应和服务器推送）
             OnMessageReceived?.Invoke(message);
         }
@@ -351,7 +357,7 @@ namespace T2FGame.Client.Network
             if (_disposed || _isClosed)
                 return;
 
-            GameLogger.LogWarning("[GameClient] Connection lost");
+            GameLogger.LogWarning("[GameClient] 连接已断开");
             State = ConnectionState.Disconnected;
 
             ClearPendingRequests(new OperationCanceledException("Connection lost"));
@@ -400,7 +406,7 @@ namespace T2FGame.Client.Network
                     if (_heartbeatTimeoutCount >= _options.HeartbeatTimeoutCount)
                     {
                         GameLogger.LogWarning(
-                            $"[GameClient] Heartbeat timeout ({_heartbeatTimeoutCount} times)"
+                            $"[GameClient] 心跳超时 ({_heartbeatTimeoutCount} 次)"
                         );
                         _channel?.Disconnect();
                         break;
@@ -411,7 +417,7 @@ namespace T2FGame.Client.Network
                     SendRequest(heartbeat);
                     _heartbeatTimeoutCount++;
 
-                    GameLogger.Log("[GameClient] Heartbeat sent");
+                    GameLogger.Log("[GameClient] 已发送心跳");
                 }
                 catch (OperationCanceledException)
                 {
@@ -419,7 +425,7 @@ namespace T2FGame.Client.Network
                 }
                 catch (Exception ex)
                 {
-                    GameLogger.LogError($"[GameClient] Heartbeat error: {ex.Message}");
+                    GameLogger.LogError($"[GameClient] 心跳错误: {ex.Message}");
                 }
             }
         }
@@ -455,15 +461,13 @@ namespace T2FGame.Client.Network
                 // 检查重连次数
                 if (_options.MaxReconnectCount > 0 && _reconnectCount >= _options.MaxReconnectCount)
                 {
-                    GameLogger.LogWarning(
-                        $"[GameClient] Max reconnect attempts reached ({_reconnectCount})"
-                    );
+                    GameLogger.LogWarning($"[GameClient] 达到最大重连次数 ({_reconnectCount})");
                     State = ConnectionState.Disconnected;
                     break;
                 }
 
                 _reconnectCount++;
-                GameLogger.Log($"[GameClient] Reconnecting... (attempt {_reconnectCount})");
+                GameLogger.Log($"[GameClient] 正在重连... (第 {_reconnectCount} 次尝试)");
 
                 try
                 {
@@ -480,7 +484,7 @@ namespace T2FGame.Client.Network
 
                     if (IsConnected)
                     {
-                        GameLogger.Log("[GameClient] Reconnected successfully");
+                        GameLogger.Log("[GameClient] 重连成功");
                         break;
                     }
                 }
@@ -490,7 +494,7 @@ namespace T2FGame.Client.Network
                 }
                 catch (Exception ex)
                 {
-                    GameLogger.LogWarning($"[GameClient] Reconnect failed: {ex.Message}");
+                    GameLogger.LogWarning($"[GameClient] 重连失败: {ex.Message}");
                     State = ConnectionState.Reconnecting;
                 }
             }
@@ -537,7 +541,7 @@ namespace T2FGame.Client.Network
                 _reconnectCts?.Dispose();
             }
 
-            GameLogger.Log("[GameClient] Disposed");
+            GameLogger.Log("[GameClient] 已释放");
         }
 
         ~GameClient()

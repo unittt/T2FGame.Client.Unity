@@ -263,7 +263,28 @@ namespace T2FGame.Client.Sdk
         #region 带回调的发送 (Send with Callback)
 
         /// <summary>
-        /// 发送请求并在收到响应时执行回调
+        /// 发送请求并在收到响应时执行回调（无请求体，原始响应）
+        /// </summary>
+        public void Send(int cmdMerge, Action<ResponseMessage> callback)
+        {
+            if (!IsInitialized)
+                return;
+            _requestManager.Send(cmdMerge, callback);
+        }
+
+        /// <summary>
+        /// 发送请求并在收到响应时执行回调（无请求体，泛型响应）
+        /// </summary>
+        public void Send<TResponse>(int cmdMerge, Action<TResponse> callback)
+            where TResponse : IMessage, new()
+        {
+            if (!IsInitialized)
+                return;
+            _requestManager.Send(cmdMerge, callback);
+        }
+
+        /// <summary>
+        /// 发送请求并在收到响应时执行回调（有请求体，泛型响应）
         /// </summary>
         public void Send<TRequest, TResponse>(
             int cmdMerge,

@@ -172,7 +172,48 @@ namespace T2FGame.Client.Sdk
         #region 带回调的发送 (Callback)
 
         /// <summary>
-        /// 发送请求并在收到响应时执行回调
+        /// 发送请求并在收到响应时执行回调（无请求体，原始响应）
+        /// </summary>
+        public void Send(int cmdMerge, Action<ResponseMessage> callback)
+        {
+            if (!_connectionManager.IsConnected)
+            {
+                GameLogger.LogWarning("[RequestManager] 未连接，无法发送请求");
+                return;
+            }
+
+            if (callback == null)
+            {
+                Send(cmdMerge);
+                return;
+            }
+
+            SendWithCallbackAsync(cmdMerge, callback).Forget();
+        }
+
+        /// <summary>
+        /// 发送请求并在收到响应时执行回调（无请求体，泛型响应）
+        /// </summary>
+        public void Send<TResponse>(int cmdMerge, Action<TResponse> callback)
+            where TResponse : IMessage, new()
+        {
+            if (!_connectionManager.IsConnected)
+            {
+                GameLogger.LogWarning("[RequestManager] 未连接，无法发送请求");
+                return;
+            }
+
+            if (callback == null)
+            {
+                Send(cmdMerge);
+                return;
+            }
+
+            SendWithCallbackAsync<TResponse>(cmdMerge, callback).Forget();
+        }
+
+        /// <summary>
+        /// 发送请求并在收到响应时执行回调（有请求体，泛型响应）
         /// </summary>
         public void Send<TRequest, TResponse>(
             int cmdMerge,
@@ -190,17 +231,56 @@ namespace T2FGame.Client.Sdk
 
             if (callback == null)
             {
-                // 如果没有回调，直接发送不等待响应
                 Send(cmdMerge, request);
                 return;
             }
 
-            // 异步发送并在收到响应后调用回调
             SendWithCallbackAsync(cmdMerge, request, callback).Forget();
         }
 
         /// <summary>
-        /// 内部异步发送并处理回调的方法
+        /// 内部异步发送并处理回调的方法（无请求体，原始响应）
+        /// </summary>
+        private async UniTaskVoid SendWithCallbackAsync(
+            int cmdMerge,
+            Action<ResponseMessage> callback
+        )
+        {
+            try
+            {
+                var response = await RequestAsync(cmdMerge);
+                callback?.Invoke(response);
+            }
+            catch (Exception ex)
+            {
+                GameLogger.LogError($"[RequestManager] 带回调的发送失败: {ex.Message}");
+                OnError?.Invoke(ex);
+            }
+        }
+
+        /// <summary>
+        /// 内部异步发送并处理回调的方法（无请求体，泛型响应）
+        /// </summary>
+        private async UniTaskVoid SendWithCallbackAsync<TResponse>(
+            int cmdMerge,
+            Action<TResponse> callback
+        )
+            where TResponse : IMessage, new()
+        {
+            try
+            {
+                var response = await RequestAsync<TResponse>(cmdMerge);
+                callback?.Invoke(response);
+            }
+            catch (Exception ex)
+            {
+                GameLogger.LogError($"[RequestManager] 带回调的发送失败: {ex.Message}");
+                OnError?.Invoke(ex);
+            }
+        }
+
+        /// <summary>
+        /// 内部异步发送并处理回调的方法（有请求体，泛型响应）
         /// </summary>
         private async UniTaskVoid SendWithCallbackAsync<TRequest, TResponse>(
             int cmdMerge,

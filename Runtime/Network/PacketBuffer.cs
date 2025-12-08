@@ -62,7 +62,7 @@ namespace T2FGame.Client.Network
                 // 验证长度
                 if (bodyLength is < 0 or > PacketCodec.MaxBodySize)
                 {
-                    throw new InvalidOperationException($"Invalid packet length: {bodyLength}");
+                    throw new InvalidOperationException($"数据包长度无效: {bodyLength}");
                 }
 
                 // 检查数据是否完整

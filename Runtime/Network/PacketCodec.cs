@@ -51,7 +51,7 @@ namespace T2FGame.Client.Network
 
             var bodyLength = BinaryPrimitives.ReadInt32BigEndian(packet.AsSpan(0, HeaderSize));
 
-            if (bodyLength < 0 || bodyLength > MaxBodySize)
+            if (bodyLength is < 0 or > MaxBodySize)
                 throw new InvalidOperationException($"Invalid body length: {bodyLength}");
 
             if (packet.Length < HeaderSize + bodyLength)

@@ -73,7 +73,7 @@ namespace T2FGame.Client.Network
                 throw new ObjectDisposedException(nameof(GameClient));
 
             if (_isClosed)
-                throw new InvalidOperationException("Client has been closed");
+                throw new InvalidOperationException("客户端已关闭");
 
             if (State is ConnectionState.Connected or ConnectionState.Connecting)
             {
@@ -174,7 +174,7 @@ namespace T2FGame.Client.Network
             }
 
             State = ConnectionState.Closed;
-            ClearPendingRequests(new OperationCanceledException("Client closed"));
+            ClearPendingRequests(new OperationCanceledException("客户端已关闭"));
 
             GameLogger.Log("[GameClient] 已关闭");
         }
@@ -188,7 +188,7 @@ namespace T2FGame.Client.Network
                 throw new ObjectDisposedException(nameof(GameClient));
 
             if (!IsConnected)
-                throw new InvalidOperationException("Not connected");
+                throw new InvalidOperationException("未连接");
 
             if (message == null)
                 throw new ArgumentNullException(nameof(message));
@@ -223,7 +223,7 @@ namespace T2FGame.Client.Network
                 throw new ObjectDisposedException(nameof(GameClient));
 
             if (!IsConnected)
-                throw new InvalidOperationException("Not connected");
+                throw new InvalidOperationException("未连接");
 
             if (command == null)
                 throw new ArgumentNullException(nameof(command));
@@ -236,7 +236,7 @@ namespace T2FGame.Client.Network
                 && !_pendingRequests.TryAdd(command.MsgId, tcs)
             )
             {
-                throw new InvalidOperationException($"Duplicate MsgId: {command.MsgId}");
+                throw new InvalidOperationException($"重复的 MsgId: {command.MsgId}");
             }
 
             try
@@ -360,7 +360,7 @@ namespace T2FGame.Client.Network
             GameLogger.LogWarning("[GameClient] 连接已断开");
             State = ConnectionState.Disconnected;
 
-            ClearPendingRequests(new OperationCanceledException("Connection lost"));
+            ClearPendingRequests(new OperationCanceledException("连接断开"));
 
             // 尝试自动重连
             if (_options.AutoReconnect && !_isClosed)

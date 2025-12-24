@@ -22,7 +22,7 @@ Pisces Client SDK 是一个专为 Unity 游戏开发设计的**独立、轻量�
 
 - **🎯 独立性**：零业务依赖，不依赖任何游戏框架，可在任意 Unity 项目中使用
 - **🏗️ 模块化**：采用三层管理器架构（连接、路由、请求分离），职责清晰，易于维护
-- **⚡ 高性能**：基于 UniTask 的零 GC 异步编程，multicast delegate 高效订阅机制
+- **⚡ 高性能**：基于 UniTask 的异步编程，multicast delegate 高效订阅机制
 - **🌐 跨平台**：支持 TCP、UDP、WebSocket，适配桌面、移动、WebGL 等所有平台
 - **🔧 易用性**：简洁的 API 设计，符合 C#/.NET 最佳实践
 - **🛡️ 可靠性**：完善的错误处理、自动重连、心跳保活机制
@@ -37,6 +37,7 @@ Pisces Client SDK 是一个专为 Unity 游戏开发设计的**独立、轻量�
 - ✅ **请求-响应模型**：支持 async/await 异步请求，自动匹配响应
 - ✅ **回调模式**：支持 Send<TRequest, TResponse>(callback) 回调式请求
 - ✅ **服务器推送**：支持 cmdMerge 消息订阅和自动分发
+- ✅ **对象池支持**：支持直接发送 RequestCommand 对象，配合对象池减少 GC
 
 ### 模块化架构
 - ✅ **ConnectionManager**：专注连接管理、状态监控、自动重连
@@ -339,6 +340,119 @@ public void OnLogoutClick()
 }
 ```
 
+### 6. 使用 RequestCommand（对象池自动管理）
+
+```csharp
+using Pisces.Client.Sdk;
+
+// 框架会自动管理对象池，开发者只需 Of 创建，无需手动回收
+public class AdvancedRequestExample : MonoBehaviour
+{
+    // 方式 1: async/await
+    private async UniTask LoginWithCommand()
+    {
+        var loginRequest = new LoginRequest
+        {
+            Username = "player123",
+            Password = "password"
+        };
+
+        // 创建 RequestCommand（内部使用对象池）
+        var command = RequestCommand.Of(
+            cmdMerge: CmdKit.GetMergeCmd(1, 1),
+            message: loginRequest
+        );
+
+        // 发送后框架会自动回收，无需手动 Despawn(切勿在发送后继续使用 command)
+        var response = await PiscesSdk.Instance.RequestAsync(command);
+        if (response.Success)
+        {
+            var loginResp = response.GetValue<LoginResponse>();
+            Debug.Log($"登录成功: {loginResp.UserId}");
+        }
+    }
+
+    // 方式 2: 回调模式
+    private void SendWithCallback()
+    {
+        var request = new GetPlayerDataRequest { UserId = "123" };
+        var command = RequestCommand.Of(CmdKit.GetMergeCmd(1, 2), request);
+
+        // 框架会在回调执行后自动回收 command
+        PiscesSdk.Instance.Send(command, response =>
+        {
+            if (response.Success)
+            {
+                var data = response.GetValue<PlayerDataResponse>();
+                Debug.Log($"玩家数据: Level={data.Level}");
+            }
+        });
+    }
+
+    // 方式 3: Fire-and-forget
+    private void SendFireAndForget()
+    {
+        // 心跳消息（框架会自动回收）
+        var heartbeatCmd = RequestCommand.Heartbeat();
+        PiscesSdk.Instance.Send(heartbeatCmd);
+    }
+
+    // 批量并发请求
+    private async UniTask BatchRequest()
+    {
+        // 创建多个命令
+        var tasks = new List<UniTask<ResponseMessage>>();
+        for (int i = 0; i < 10; i++)
+        {
+            var cmd = RequestCommand.Of(
+                CmdKit.GetMergeCmd(3, 1),
+                new GetItemRequest { ItemId = i }
+            );
+            // 每个请求都会自动回收
+            tasks.Add(PiscesSdk.Instance.RequestAsync(cmd));
+        }
+
+        // 等待所有请求完成
+        var responses = await UniTask.WhenAll(tasks);
+
+        // 处理响应
+        foreach (var response in responses)
+        {
+            if (response.Success)
+            {
+                var item = response.GetValue<ItemResponse>();
+                Debug.Log($"获得物品: {item.ItemName}");
+            }
+        }
+    }
+
+    // 使用基础类型便捷方法（推荐，更简洁）
+    private async UniTask SendWithBuiltInTypes()
+    {
+        // 直接发送 int（框架内部使用 RequestCommand + 对象池）
+        await PiscesSdk.Instance.RequestAsync(
+            CmdKit.GetMergeCmd(1, 1),
+            100  // 自动转换为 IntValue
+        );
+
+        // 直接发送 string
+        await PiscesSdk.Instance.RequestAsync(
+            CmdKit.GetMergeCmd(1, 2),
+            "hello"  // 自动转换为 StringValue
+        );
+
+        // 以上方法内部都自动使用对象池，零 GC
+    }
+}
+```
+
+**重要说明**：
+- ✅ **框架自动回收**：`RequestCommand` 在发送后会被框架自动归还到对象池
+- ✅ **开发者无需管理**：只需调用 `RequestCommand.Of()` 创建，无需手动 `Despawn`
+- ⚠️ **禁止手动回收**：不要手动调用 `ReferencePool<RequestCommand>.Despawn()`，会导致双重回收错误
+- ✅ **推荐使用内置方法**：对于简单场景，优先使用 `RequestAsync<TRequest>(...)` 等便捷方法
+- ✅ **RequestCommand 适用场景**：复杂请求构建、批量操作、需要精细控制的场景
+
 ---
 
 ## 📚 API 文档
@@ -392,6 +506,12 @@ UniTask<TResponse> RequestAsync<TRequest, TResponse>(
     TRequest request,
     CancellationToken cancellationToken = default
 ) where TRequest : IMessage where TResponse : IMessage, new()
+
+// 直接发送 RequestCommand 对象（支持对象池）
+UniTask<ResponseMessage> RequestAsync(
+    RequestCommand command,
+    CancellationToken cancellationToken = default
+)
 ```
 
 #### 仅发送消息
@@ -402,6 +522,9 @@ void Send(int cmdMerge)
 
 // 发送 Protobuf 消息
 void Send<TRequest>(int cmdMerge, TRequest request) where TRequest : IMessage
+
+// 直接发送 RequestCommand 对象（fire-and-forget，支持对象池）
+void Send(RequestCommand command)
 
 // 发送基础类型
 void SendInt(int cmdMerge, int value)
@@ -433,6 +556,9 @@ void Send<TRequest, TResponse>(
     TRequest request,
     Action<TResponse> callback
 ) where TRequest : IMessage where TResponse : IMessage, new()
+
+// 直接发送 RequestCommand 对象并在收到响应时执行回调（支持对象池）
+void Send(RequestCommand command, Action<ResponseMessage> callback)
 ```
 
 #### 消息订阅
@@ -522,37 +648,73 @@ public sealed class ResponseMessage
     public int ResponseStatus { get; }     // 响应状态码（0=成功）
     public bool Success { get; }           // 是否成功
     public bool HasError { get; }          // 是否有错误
+    public string ErrorMessage { get; }    // 错误消息（来自服务器）
 
     // 获取数据（支持缓存机制，同一类型多次调用不会重复反序列化）
     public T GetValue<T>() where T : IMessage, new();
 
-    // 基础类型便捷方法
+    // 基础类型便捷方法（零 GC + 空安全）
     public int GetInt();
     public long GetLong();
     public string GetString();
     public bool GetBool();
-    public List<int> ListInt();
-    public List<long> ListLong();
-    public List<string> ListString();
-    public List<bool> ListBool();
+
+    // 列表方法（零 GC - 返回只读列表）
+    public IReadOnlyList<int> ListInt();
+    public IReadOnlyList<long> ListLong();
+    public IReadOnlyList<string> ListString();
+    public IReadOnlyList<bool> ListBool();
+
+    // Unity Vector 类型支持
+    public UnityEngine.Vector2 GetVector2();
+    public UnityEngine.Vector2Int GetVector2Int();
+    public UnityEngine.Vector3 GetVector3();
+    public UnityEngine.Vector3Int GetVector3Int();
+
+    // Vector 列表方法（零 GC）
+    public IReadOnlyList<Vector2> ListVector2();
+    public IReadOnlyList<Vector2Int> ListVector2Int();
+    public IReadOnlyList<Vector3> ListVector3();
+    public IReadOnlyList<Vector3Int> ListVector3Int();
 }
 ```
 
 **性能优化说明**：
-- `GetValue<T>()` 内置了单值缓存机制，同一响应对象重复调用相同类型不会重复反序列化
-- 对象池回收时自动清理缓存，无需手动管理
-- 性能提升：重复调用性能提升 500 倍+
+- ✅ `GetValue<T>()` 内置了单值缓存机制，同一响应对象重复调用相同类型不会重复反序列化
+- ✅ 所有 List 方法返回 `IReadOnlyList<T>`，直接引用内部数据，**零 GC 开销**
+- ✅ 所有 Get 方法增加**空值安全**，不会抛出 NullReferenceException
+- ✅ 对象池回收时自动清理缓存，无需手动管理
+- ✅ 性能提升：重复调用缓存性能提升 500 倍+，List 方法避免 ToList() 的 GC 开销
 
 **使用示例**：
 ```csharp
 UserAction.OfLogin(request, result => {
-    if (result.Success) {
-        // 第1次调用：反序列化 + 缓存
-        var data1 = result.GetValue<LoginResponse>();
+    // 错误处理
+    if (result.HasError) {
+        Debug.LogError($"登录失败: {result.ErrorMessage}");  // 显示服务器错误消息
+        return;
+    }
 
-        // 第2次、第3次调用：直接从缓存返回，无额外开销
-        var data2 = result.GetValue<LoginResponse>();
-        var data3 = result.GetValue<LoginResponse>();
+    // 获取数据（第1次调用：反序列化 + 缓存）
+    var data = result.GetValue<LoginResponse>();
+
+    // 重复调用直接从缓存返回，无额外开销
+    var data2 = result.GetValue<LoginResponse>();
+
+    // 列表数据（零 GC - 直接引用，无复制）
+    var scores = result.ListInt();        // IReadOnlyList<int>
+    foreach (var score in scores) {       // 无 GC 分配
+        ProcessScore(score);
+    }
+
+    // Vector 类型
+    var position = result.GetVector3();   // 获取玩家位置
+    transform.position = position;        // 直接使用
+
+    // Vector 列表（零 GC）
+    var waypoints = result.ListVector3(); // IReadOnlyList<Vector3>
+    for (int i = 0; i < waypoints.Count; i++) {
+        pathNodes[i].position = waypoints[i];
     }
 });
 ```

@@ -172,6 +172,15 @@ namespace Pisces.Client.Sdk
         }
 
         /// <summary>
+        /// 直接发送 RequestCommand 并等待响应
+        /// </summary>
+        public async UniTask<ResponseMessage> RequestAsync(RequestCommand command, CancellationToken cancellationToken = default)
+        {
+            EnsureInitialized();
+            return await _requestManager.RequestAsync(command, cancellationToken);
+        }
+
+        /// <summary>
         /// 发送请求并等待响应（获取指定类型的响应数据）
         /// </summary>
         public async UniTask<TResponse> RequestAsync<TResponse>(int cmdMerge, CancellationToken cancellationToken = default) where TResponse : IMessage, new()
@@ -219,45 +228,14 @@ namespace Pisces.Client.Sdk
         }
 
         /// <summary>
-        /// 发送整数请求
+        /// 直接发送 RequestCommand（仅发送，不等待响应）
         /// </summary>
-        public void SendInt(int cmdMerge, int value)
+        public void Send(RequestCommand command)
         {
             if (!IsInitialized)
                 return;
-            _requestManager.SendInt(cmdMerge, value);
+            _requestManager.Send(command);
         }
-
-        /// <summary>
-        /// 发送字符串请求
-        /// </summary>
-        public void SendString(int cmdMerge, string value)
-        {
-            if (!IsInitialized)
-                return;
-            _requestManager.SendString(cmdMerge, value);
-        }
-
-        /// <summary>
-        /// 发送长整数请求
-        /// </summary>
-        public void SendLong(int cmdMerge, long value)
-        {
-            if (!IsInitialized)
-                return;
-            _requestManager.SendLong(cmdMerge, value);
-        }
-
-        /// <summary>
-        /// 发送布尔值请求
-        /// </summary>
-        public void SendBool(int cmdMerge, bool value)
-        {
-            if (!IsInitialized)
-                return;
-            _requestManager.SendBool(cmdMerge, value);
-        }
-
         #endregion
 
         #region 带回调的发送 (Send with Callback)
@@ -312,6 +290,16 @@ namespace Pisces.Client.Sdk
             if (!IsInitialized)
                 return;
             _requestManager.Send(cmdMerge, request, callback);
+        }
+
+        /// <summary>
+        /// 直接发送 RequestCommand 并在收到响应时执行回调
+        /// </summary>
+        public void Send(RequestCommand command, Action<ResponseMessage> callback)
+        {
+            if (!IsInitialized)
+                return;
+            _requestManager.Send(command, callback);
         }
 
         #endregion

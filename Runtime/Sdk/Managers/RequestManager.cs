@@ -51,6 +51,21 @@ namespace Pisces.Client.Sdk
         }
 
         /// <summary>
+        /// 直接发送 RequestCommand 并等待响应
+        /// </summary>
+        public async UniTask<ResponseMessage> RequestAsync(
+            RequestCommand command,
+            CancellationToken cancellationToken = default
+        )
+        {
+            EnsureConnected();
+            if (command == null)
+                throw new ArgumentNullException(nameof(command));
+
+            return await _connectionManager.Client.RequestAsync(command, cancellationToken);
+        }
+
+        /// <summary>
         /// 发送请求并等待响应（获取指定类型的响应数据）
         /// </summary>
         public async UniTask<TResponse> RequestAsync<TResponse>(
@@ -116,6 +131,26 @@ namespace Pisces.Client.Sdk
                 return;
 
             var command = RequestCommand.Of(cmdMerge, request);
+            _connectionManager.Client.SendRequest(command);
+        }
+
+        /// <summary>
+        /// 直接发送 RequestCommand（仅发送，不等待响应）
+        /// </summary>
+        public void Send(RequestCommand command)
+        {
+            if (!_connectionManager.IsConnected)
+            {
+                GameLogger.LogWarning("[RequestManager] 未连接，无法发送请求");
+                return;
+            }
+
+            if (command == null)
+            {
+                GameLogger.LogWarning("[RequestManager] RequestCommand 不能为 null");
+                return;
+            }
+
             _connectionManager.Client.SendRequest(command);
         }
 
@@ -264,6 +299,32 @@ namespace Pisces.Client.Sdk
         }
 
         /// <summary>
+        /// 直接发送 RequestCommand 并在收到响应时执行回调
+        /// </summary>
+        public void Send(RequestCommand command, Action<ResponseMessage> callback)
+        {
+            if (!_connectionManager.IsConnected)
+            {
+                GameLogger.LogWarning("[RequestManager] 未连接，无法发送请求");
+                return;
+            }
+
+            if (command == null)
+            {
+                GameLogger.LogWarning("[RequestManager] RequestCommand 不能为 null");
+                return;
+            }
+
+            if (callback == null)
+            {
+                Send(command);
+                return;
+            }
+
+            SendWithCallbackAsync(command, callback).Forget();
+        }
+
+        /// <summary>
         /// 内部异步发送并处理回调的方法（无请求体，原始响应）
         /// </summary>
         private async UniTaskVoid SendWithCallbackAsync(
@@ -340,6 +401,26 @@ namespace Pisces.Client.Sdk
             try
             {
                 var response = await RequestAsync(cmdMerge, request);
+                callback?.Invoke(response);
+            }
+            catch (Exception ex)
+            {
+                GameLogger.LogError($"[RequestManager] 带回调的发送失败: {ex.Message}");
+                OnError?.Invoke(ex);
+            }
+        }
+
+        /// <summary>
+        /// 内部异步发送并处理回调的方法（RequestCommand，原始响应）
+        /// </summary>
+        private async UniTaskVoid SendWithCallbackAsync(
+            RequestCommand command,
+            Action<ResponseMessage> callback
+        )
+        {
+            try
+            {
+                var response = await RequestAsync(command);
                 callback?.Invoke(response);
             }
             catch (Exception ex)

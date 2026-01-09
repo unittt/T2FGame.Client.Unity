@@ -2,7 +2,7 @@
   "name": "com.pisces.client",
   "version": "0.0.1",
   "displayName": "Pisces Client SDK",
-  "description": "Pisces 游戏客户端 SDK - 高性能、跨平台、现代化的 Unity 网络通信框架。基于 UniTask 和 ioGame 协议，提供完整的客户端网络功能，包括 TCP/UDP/WebSocket 多协议支持、心跳保活、自动重连等特性。",
+  "description": "Pisces 游戏客户端 SDK - 高性能、跨平台、现代化的 Unity 网络通信框架。基于 UniTask 和 Protobuf 协议，提供完整的客户端网络功能，包括 TCP/UDP/WebSocket 多协议支持、心跳保活、自动重连等特性。",
   "unity": "2022.3",
   "unityRelease": "0f1",
   "documentationUrl": "https://github.com/PiscesGameDev/Pisces.Client.Unity#readme",
@@ -32,7 +32,6 @@
     "protobuf",
     "unitask",
     "async",
-    "iogame",
     "multiplayer",
     "real-time",
     "cross-platform"

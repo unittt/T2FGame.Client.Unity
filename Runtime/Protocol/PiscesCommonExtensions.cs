@@ -1,1224 +1,620 @@
 using System.Collections.Generic;
 using Google.Protobuf;
 
-
 namespace Pisces.Protocol
 {
-    #region IntValue Extensions
+    #region 1. 基础类型扩展 (IntValue, LongValue, etc.)
 
     /// <summary>
-    /// IntValue 扩展，提供 int 与 IntValue 之间的隐式转换
+    /// IntValue 消息类型的扩展类，提供与基础类型 int 的隐式转换
     /// </summary>
-    public partial class IntValue
+    public partial class IntValue 
     {
         /// <summary>
-        /// 从 int 隐式转换为 IntValue
+        /// 将 int 类型隐式转换为 IntValue 包装器
         /// </summary>
-        /// <example>
-        /// IntValue wrapper = 123;
-        /// var request = new SomeRequest { Score = 100 };
-        /// </example>
-        public static implicit operator IntValue(int value)
-        {
-            return new IntValue { Value = value };
-        }
-
+        /// <param name="value">要包装的 int 值</param>
+        /// <returns>包含指定值的 IntValue 对象</returns>
+        public static implicit operator IntValue(int value) => new() { Value = value };
+        
         /// <summary>
-        /// 从 IntValue 隐式转换为 int
+        /// 将 IntValue 包装器隐式转换为 int 类型
         /// </summary>
-        /// <example>
-        /// int value = response.GetValue&lt;IntValue&gt;();
-        /// </example>
-        public static implicit operator int(IntValue wrapper)
-        {
-            return wrapper?.Value ?? 0;
-        }
+        /// <param name="wrapper">IntValue 包装器对象</param>
+        /// <returns>包装的 int 值，如果包装器为 null 则返回 0</returns>
+        public static implicit operator int(IntValue wrapper) => wrapper?.Value ?? 0;
     }
 
-    #endregion
-
-    #region LongValue Extensions
-
     /// <summary>
-    /// LongValue 扩展，提供 long 与 LongValue 之间的隐式转换
+    /// LongValue 消息类型的扩展类，提供与基础类型 long 的隐式转换
     /// </summary>
-    public partial class LongValue
+    public partial class LongValue 
     {
         /// <summary>
-        /// 从 long 隐式转换为 LongValue
+        /// 将 long 类型隐式转换为 LongValue 包装器
         /// </summary>
-        public static implicit operator LongValue(long value)
-        {
-            return new LongValue { Value = value };
-        }
-
+        /// <param name="value">要包装的 long 值</param>
+        /// <returns>包含指定值的 LongValue 对象</returns>
+        public static implicit operator LongValue(long value) => new() { Value = value };
+        
         /// <summary>
-        /// 从 LongValue 隐式转换为 long
+        /// 将 LongValue 包装器隐式转换为 long 类型
         /// </summary>
-        public static implicit operator long(LongValue wrapper)
-        {
-            return wrapper?.Value ?? 0L;
-        }
+        /// <param name="wrapper">LongValue 包装器对象</param>
+        /// <returns>包装的 long 值，如果包装器为 null 则返回 0L</returns>
+        public static implicit operator long(LongValue wrapper) => wrapper?.Value ?? 0L;
     }
 
-    #endregion
-
-    #region StringValue Extensions
-
     /// <summary>
-    /// StringValue 扩展，提供 string 与 StringValue 之间的隐式转换
+    /// StringValue 消息类型的扩展类，提供与基础类型 string 的隐式转换
     /// </summary>
     public partial class StringValue
     {
         /// <summary>
-        /// 从 string 隐式转换为 StringValue
+        /// 将 string 类型隐式转换为 StringValue 包装器
         /// </summary>
-        public static implicit operator StringValue(string value)
-        {
-            return new StringValue { Value = value ?? string.Empty };
-        }
-
+        /// <param name="value">要包装的字符串值</param>
+        /// <returns>包含指定值的 StringValue 对象</returns>
+        public static implicit operator StringValue(string value) => new() { Value = value ?? string.Empty };
+        
         /// <summary>
-        /// 从 StringValue 隐式转换为 string
+        /// 将 StringValue 包装器隐式转换为 string 类型
         /// </summary>
-        public static implicit operator string(StringValue wrapper)
-        {
-            return wrapper?.Value ?? string.Empty;
-        }
+        /// <param name="wrapper">StringValue 包装器对象</param>
+        /// <returns>包装的字符串值，如果包装器为 null 则返回空字符串</returns>
+        public static implicit operator string(StringValue wrapper) => wrapper?.Value ?? string.Empty;
+    }
+
+    /// <summary>
+    /// BoolValue 消息类型的扩展类，提供与基础类型 bool 的隐式转换
+    /// </summary>
+    public partial class BoolValue 
+    {
+        /// <summary>
+        /// 将 bool 类型隐式转换为 BoolValue 包装器
+        /// </summary>
+        /// <param name="value">要包装的布尔值</param>
+        /// <returns>包含指定值的 BoolValue 对象</returns>
+        public static implicit operator BoolValue(bool value) => new() { Value = value };
+        
+        /// <summary>
+        /// 将 BoolValue 包装器隐式转换为 bool 类型
+        /// </summary>
+        /// <param name="wrapper">BoolValue 包装器对象</param>
+        /// <returns>包装的布尔值，如果包装器为 null 则返回 false</returns>
+        public static implicit operator bool(BoolValue wrapper) => wrapper?.Value ?? false;
     }
 
     #endregion
 
-    #region BoolValue Extensions
+    #region 2. 基础列表扩展 (IntValueList, LongValueList, etc.)
 
     /// <summary>
-    /// BoolValue 扩展，提供 bool 与 BoolValue 之间的隐式转换
+    /// IntValueList 消息类型的扩展类，提供与 List&lt;int&gt; 和 int[] 数组的隐式转换
     /// </summary>
-    public partial class BoolValue
+    public partial class IntValueList 
     {
         /// <summary>
-        /// 从 bool 隐式转换为 BoolValue
+        /// 将 List&lt;int&gt; 隐式转换为 IntValueList
         /// </summary>
-        public static implicit operator BoolValue(bool value)
-        {
-            return new BoolValue { Value = value };
-        }
-
+        /// <param name="values">要转换的整数列表</param>
+        /// <returns>包含指定值的 IntValueList 对象</returns>
+        public static implicit operator IntValueList(List<int> values) => Create(values);
+        
         /// <summary>
-        /// 从 BoolValue 隐式转换为 bool
+        /// 将 int[] 数组隐式转换为 IntValueList
         /// </summary>
-        public static implicit operator bool(BoolValue wrapper)
-        {
-            return wrapper?.Value ?? false;
+        /// <param name="values">要转换的整数数组</param>
+        /// <returns>包含指定值的 IntValueList 对象</returns>
+        public static implicit operator IntValueList(int[] values) => Create(values);
+        
+        /// <summary>
+        /// 创建 IntValueList 对象并填充指定的值
+        /// </summary>
+        /// <param name="v">要填充的整数值集合</param>
+        /// <returns>包含指定值的 IntValueList 对象</returns>
+        private static IntValueList Create(IList<int> v) {
+            var l = new IntValueList();
+            if (v != null) l.Values.AddRange(v);
+            return l;
         }
+        
+        /// <summary>
+        /// 将当前 IntValueList 中的值填充到指定的结果列表中
+        /// </summary>
+        /// <param name="result">用于接收结果的列表</param>
+        public void ToList(List<int> result) => CollectionConvertHelper.FillList(Values, result, i => i);
+    }
+
+    /// <summary>
+    /// LongValueList 消息类型的扩展类，提供与 List&lt;long&gt; 和 long[] 数组的隐式转换
+    /// </summary>
+    public partial class LongValueList 
+    {
+        /// <summary>
+        /// 将 List&lt;long&gt; 隐式转换为 LongValueList
+        /// </summary>
+        /// <param name="values">要转换的长整数列表</param>
+        /// <returns>包含指定值的 LongValueList 对象</returns>
+        public static implicit operator LongValueList(List<long> values) => Create(values);
+        
+        /// <summary>
+        /// 将 long[] 数组隐式转换为 LongValueList
+        /// </summary>
+        /// <param name="values">要转换的长整数数组</param>
+        /// <returns>包含指定值的 LongValueList 对象</returns>
+        public static implicit operator LongValueList(long[] values) => Create(values);
+        
+        /// <summary>
+        /// 创建 LongValueList 对象并填充指定的值
+        /// </summary>
+        /// <param name="v">要填充的长整数值集合</param>
+        /// <returns>包含指定值的 LongValueList 对象</returns>
+        private static LongValueList Create(IList<long> v)
+        {
+            var l = new LongValueList();
+            if (v != null) l.Values.AddRange(v);
+            return l;
+        }
+        
+        /// <summary>
+        /// 将当前 LongValueList 中的值填充到指定的结果列表中
+        /// </summary>
+        /// <param name="result">用于接收结果的列表</param>
+        public void ToList(List<long> result) => CollectionConvertHelper.FillList(Values, result, i => i);
+    }
+
+    /// <summary>
+    /// StringValueList 消息类型的扩展类，提供与 List&lt;string&gt; 和 string[] 数组的隐式转换
+    /// </summary>
+    public partial class StringValueList 
+    {
+        /// <summary>
+        /// 将 List&lt;string&gt; 隐式转换为 StringValueList
+        /// </summary>
+        /// <param name="values">要转换的字符串列表</param>
+        /// <returns>包含指定值的 StringValueList 对象</returns>
+        public static implicit operator StringValueList(List<string> values) => Create(values);
+        
+        /// <summary>
+        /// 将 string[] 数组隐式转换为 StringValueList
+        /// </summary>
+        /// <param name="values">要转换的字符串数组</param>
+        /// <returns>包含指定值的 StringValueList 对象</returns>
+        public static implicit operator StringValueList(string[] values) => Create(values);
+        
+        /// <summary>
+        /// 创建 StringValueList 对象并填充指定的值
+        /// </summary>
+        /// <param name="v">要填充的字符串值集合</param>
+        /// <returns>包含指定值的 StringValueList 对象</returns>
+        private static StringValueList Create(IList<string> v) {
+            var l = new StringValueList();
+            if (v != null) l.Values.AddRange(v);
+            return l;
+        }
+        
+        /// <summary>
+        /// 将当前 StringValueList 中的值填充到指定的结果列表中
+        /// </summary>
+        /// <param name="result">用于接收结果的列表</param>
+        public void ToList(List<string> result) => CollectionConvertHelper.FillList(Values, result, i => i);
+    }
+
+    /// <summary>
+    /// BoolValueList 消息类型的扩展类，提供与 List&lt;bool&gt; 和 bool[] 数组的隐式转换
+    /// </summary>
+    public partial class BoolValueList 
+    {
+        /// <summary>
+        /// 将 List&lt;bool&gt; 隐式转换为 BoolValueList
+        /// </summary>
+        /// <param name="values">要转换的布尔列表</param>
+        /// <returns>包含指定值的 BoolValueList 对象</returns>
+        public static implicit operator BoolValueList(List<bool> values) => Create(values);
+        
+        /// <summary>
+        /// 将 bool[] 数组隐式转换为 BoolValueList
+        /// </summary>
+        /// <param name="values">要转换的布尔数组</param>
+        /// <returns>包含指定值的 BoolValueList 对象</returns>
+        public static implicit operator BoolValueList(bool[] values) => Create(values);
+        
+        /// <summary>
+        /// 创建 BoolValueList 对象并填充指定的值
+        /// </summary>
+        /// <param name="v">要填充的布尔值集合</param>
+        /// <returns>包含指定值的 BoolValueList 对象</returns>
+        private static BoolValueList Create(IList<bool> v) {
+            var l = new BoolValueList();
+            if (v != null) l.Values.AddRange(v);
+            return l;
+        }
+        
+        /// <summary>
+        /// 将当前 BoolValueList 中的值填充到指定的结果列表中
+        /// </summary>
+        /// <param name="result">用于接收结果的列表</param>
+        public void ToList(List<bool> result) => CollectionConvertHelper.FillList(Values, result, i => i);
     }
 
     #endregion
 
-    #region List Extensions
-    
-    
-    /// <summary>
-    /// IntValueList 扩展，提供 List&lt;int&gt; 与 IntValueList 之间的隐式转换
-    /// </summary>
-    public partial class IntValueList
-    {
-        /// <summary>
-        /// 从 List&lt;int&gt; 隐式转换为 IntValueList
-        /// </summary>
-        public static implicit operator IntValueList(List<int> values)
-        {
-            var list = new IntValueList();
-            if (values != null)
-                list.Values.AddRange(values);
-            return list;
-        }
-
-        /// <summary>
-        /// 从 int[] 隐式转换为 IntValueList
-        /// </summary>
-        public static implicit operator IntValueList(int[] values)
-        {
-            var list = new IntValueList();
-            if (values != null)
-                list.Values.AddRange(values);
-            return list;
-        }
-
-        /// <summary>
-        /// 从 IntValueList 隐式转换为 List&lt;int&gt;
-        /// </summary>
-        public static implicit operator List<int>(IntValueList wrapper)
-        {
-            if (wrapper?.Values == null) return new List<int>();
-            return new List<int>(wrapper.Values);
-        }
-
-        /// <summary>
-        /// 转换为 List（no-GC 版本，复用传入的 List 对象）
-        /// </summary>
-        /// <param name="result">用于存储结果的 List，会先清空再填充</param>
-        /// <example>
-        /// // 高频调用场景，避免 GC
-        /// private List&lt;int&gt; _cachedScores = new List&lt;int&gt;(100);
-        ///
-        /// void OnScoreSync(IntValueList scoreData)
-        /// {
-        ///     scoreData.ToList(_cachedScores);
-        ///     // 使用 _cachedScores
-        /// }
-        /// </example>
-        public void ToList(List<int> result)
-        {
-            CollectionConvertHelper.ToList(Values, result);
-        }
-    }
+    #region 3. ByteValueList (Protobuf 消息列表)
 
     /// <summary>
-    /// LongValueList 扩展，提供 List&lt;long&gt; 与 LongValueList 之间的隐式转换
-    /// </summary>
-    public partial class LongValueList
-    {
-        /// <summary>
-        /// 从 List&lt;long&gt; 隐式转换为 LongValueList
-        /// </summary>
-        public static implicit operator LongValueList(List<long> values)
-        {
-            var list = new LongValueList();
-            if (values != null)
-                list.Values.AddRange(values);
-            return list;
-        }
-
-        /// <summary>
-        /// 从 long[] 隐式转换为 LongValueList
-        /// </summary>
-        public static implicit operator LongValueList(long[] values)
-        {
-            var list = new LongValueList();
-            if (values != null)
-                list.Values.AddRange(values);
-            return list;
-        }
-
-        /// <summary>
-        /// 从 LongValueList 隐式转换为 List&lt;long&gt;
-        /// </summary>
-        public static implicit operator List<long>(LongValueList wrapper)
-        {
-            if (wrapper?.Values == null) return new List<long>();
-            return new List<long>(wrapper.Values);
-        }
-
-        /// <summary>
-        /// 转换为 List（no-GC 版本，复用传入的 List 对象）
-        /// </summary>
-        /// <param name="result">用于存储结果的 List，会先清空再填充</param>
-        public void ToList(List<long> result)
-        {
-            CollectionConvertHelper.ToList(Values, result);
-        }
-    }
-
-    /// <summary>
-    /// StringValueList 扩展，提供 List&lt;string&gt; 与 StringValueList 之间的隐式转换
-    /// </summary>
-    public partial class StringValueList
-    {
-        /// <summary>
-        /// 从 List&lt;string&gt; 隐式转换为 StringValueList
-        /// </summary>
-        public static implicit operator StringValueList(List<string> values)
-        {
-            var list = new StringValueList();
-            if (values != null)
-                list.Values.AddRange(values);
-            return list;
-        }
-
-        /// <summary>
-        /// 从 string[] 隐式转换为 StringValueList
-        /// </summary>
-        public static implicit operator StringValueList(string[] values)
-        {
-            var list = new StringValueList();
-            if (values != null)
-                list.Values.AddRange(values);
-            return list;
-        }
-
-        /// <summary>
-        /// 从 StringValueList 隐式转换为 List&lt;string&gt;
-        /// </summary>
-        public static implicit operator List<string>(StringValueList wrapper)
-        {
-            if (wrapper?.Values == null) return new List<string>();
-            return new List<string>(wrapper.Values);
-        }
-
-        /// <summary>
-        /// 转换为 List（no-GC 版本，复用传入的 List 对象）
-        /// </summary>
-        /// <param name="result">用于存储结果的 List，会先清空再填充</param>
-        public void ToList(List<string> result)
-        {
-            CollectionConvertHelper.ToList(Values, result);
-        }
-    }
-
-    /// <summary>
-    /// BoolValueList 扩展，提供 List&lt;bool&gt; 与 BoolValueList 之间的隐式转换
-    /// </summary>
-    public partial class BoolValueList
-    {
-        /// <summary>
-        /// 从 List&lt;bool&gt; 隐式转换为 BoolValueList
-        /// </summary>
-        public static implicit operator BoolValueList(List<bool> values)
-        {
-            var list = new BoolValueList();
-            if (values != null)
-                list.Values.AddRange(values);
-            return list;
-        }
-
-        /// <summary>
-        /// 从 bool[] 隐式转换为 BoolValueList
-        /// </summary>
-        public static implicit operator BoolValueList(bool[] values)
-        {
-            var list = new BoolValueList();
-            if (values != null)
-                list.Values.AddRange(values);
-            return list;
-        }
-
-        /// <summary>
-        /// 从 BoolValueList 隐式转换为 List&lt;bool&gt;
-        /// </summary>
-        public static implicit operator List<bool>(BoolValueList wrapper)
-        {
-            if (wrapper?.Values == null) return new List<bool>();
-            return new List<bool>(wrapper.Values);
-        }
-
-        /// <summary>
-        /// 转换为 List（no-GC 版本，复用传入的 List 对象）
-        /// </summary>
-        /// <param name="result">用于存储结果的 List，会先清空再填充</param>
-        public void ToList(List<bool> result)
-        {
-            CollectionConvertHelper.ToList(Values, result);
-        }
-    }
-
-    /// <summary>
-    /// ByteValueList 扩展，提供 List&lt;IMessage&gt; 与 ByteValueList 之间的转换
-    /// 用于存储序列化的 Protobuf 消息列表
+    /// ByteValueList 消息类型的扩展类，用于处理 Protobuf 消息的字节序列化列表
     /// </summary>
     public partial class ByteValueList
     {
         /// <summary>
-        /// 从 List&lt;T&gt; 创建 ByteValueList，T 必须是 IMessage 类型
+        /// 从 Protobuf 消息列表创建 ByteValueList
         /// </summary>
-        /// <typeparam name="T">Protobuf 消息类型</typeparam>
-        /// <param name="messages">消息列表</param>
-        /// <returns>ByteValueList 实例</returns>
-        public static ByteValueList From<T>(List<T> messages) where T : IMessage<T>
+        /// <typeparam name="T">实现 IMessage&lt;T&gt; 接口的消息类型</typeparam>
+        /// <param name="messages">要序列化的消息列表</param>
+        /// <returns>包含消息字节表示的 ByteValueList 对象</returns>
+        public static ByteValueList From<T>(List<T> messages) where T : IMessage<T> 
         {
             var list = new ByteValueList();
-            if (messages != null)
-            {
-                var count = messages.Count;
-                for (var i = 0; i < count; i++)
-                {
-                    list.Values.Add(messages[i].ToByteString());
-                }
-            }
+            CollectionConvertHelper.FillRepeatedField(messages, list.Values, m => m.ToByteString());
             return list;
         }
 
+        // No-GC 反序列化版本
         /// <summary>
-        /// 从 T[] 创建 ByteValueList，T 必须是 IMessage 类型
+        /// 将当前 ByteValueList 中的字节数据反序列化为指定类型的消息列表
         /// </summary>
-        /// <typeparam name="T">Protobuf 消息类型</typeparam>
-        /// <param name="messages">消息数组</param>
-        /// <returns>ByteValueList 实例</returns>
-        public static ByteValueList From<T>(T[] messages) where T : IMessage<T>
-        {
-            var list = new ByteValueList();
-            if (messages != null)
-            {
-                foreach (var message in messages)
-                {
-                    if (message != null)
-                    {
-                        list.Values.Add(message.ToByteString());
-                    }
-                }
-            }
-            return list;
-        }
+        /// <typeparam name="T">实现 IMessage 接口且具有无参构造函数的消息类型</typeparam>
+        /// <param name="result">用于接收反序列化结果的列表</param>
+        public void ToList<T>(List<T> result) where T : IMessage, new() => CollectionConvertHelper.FillList(Values, result, ProtoSerializer.Deserialize<T>, true);
 
         /// <summary>
-        /// 转换为 List&lt;T&gt;（使用 ProtoSerializer）
+        /// 使用指定的消息解析器将当前 ByteValueList 中的字节数据反序列化为指定类型的消息列表
         /// </summary>
-        /// <typeparam name="T">Protobuf 消息类型</typeparam>
-        /// <returns>消息列表</returns>
-        /// <example>
-        /// List&lt;PlayerInfo&gt; players = byteList.ToList&lt;PlayerInfo&gt;();
-        /// </example>
-        public List<T> ToList<T>() where T : IMessage, new()
-        {
-            if (Values == null) return new List<T>();
-
-            var result = new List<T>(Values.Count);
-            for (var i = 0; i < Values.Count; i++)
-            {
-                try
-                {
-                    var message = ProtoSerializer.Deserialize<T>(Values[i]);
-                    if (message != null)
-                    {
-                        result.Add(message);
-                    }
-                }
-                catch (InvalidProtocolBufferException)
-                {
-                    // 解析失败时跳过该项
-                    continue;
-                }
-            }
-            return result;
-        }
+        /// <typeparam name="T">实现 IMessage&lt;T&gt; 接口的消息类型</typeparam>
+        /// <param name="result">用于接收反序列化结果的列表</param>
+        /// <param name="parser">用于反序列化消息的解析器</param>
+        public void ToList<T>(List<T> result, MessageParser<T> parser) where T : IMessage<T> => 
+            CollectionConvertHelper.FillList(Values, result, bs => ProtoSerializer.Deserialize(bs, parser), true);
 
         /// <summary>
-        /// 转换为 List&lt;T&gt;（使用 MessageParser，性能更优）
+        /// 向当前 ByteValueList 添加一个 Protobuf 消息
         /// </summary>
-        /// <typeparam name="T">Protobuf 消息类型</typeparam>
-        /// <param name="parser">消息解析器</param>
-        /// <returns>消息列表</returns>
-        /// <example>
-        /// List&lt;PlayerInfo&gt; players = byteList.ToList(PlayerInfo.Parser);
-        /// </example>
-        public List<T> ToList<T>(MessageParser<T> parser) where T : IMessage<T>
+        /// <typeparam name="T">实现 IMessage&lt;T&gt; 接口的消息类型</typeparam>
+        /// <param name="message">要添加的消息对象</param>
+        public void Add<T>(T message) where T : IMessage<T> 
         {
-            if (Values == null) return new List<T>();
-
-            var result = new List<T>(Values.Count);
-            for (var i = 0; i < Values.Count; i++)
-            {
-                try
-                {
-                    var message = ProtoSerializer.Deserialize(Values[i], parser);
-                    if (message != null)
-                    {
-                        result.Add(message);
-                    }
-                }
-                catch (InvalidProtocolBufferException)
-                {
-                    // 解析失败时跳过该项
-                }
-            }
-            return result;
-        }
-
-        /// <summary>
-        /// 转换为 List（no-GC 版本，复用传入的 List 对象）
-        /// </summary>
-        /// <typeparam name="T">Protobuf 消息类型</typeparam>
-        /// <param name="result">用于存储结果的 List，会先清空再填充</param>
-        /// <example>
-        /// // 高频调用场景，避免 GC
-        /// private List&lt;PlayerInfo&gt; _cachedPlayers = new List&lt;PlayerInfo&gt;(100);
-        ///
-        /// void OnNetworkSync(ByteValueList data)
-        /// {
-        ///     data.ToList(_cachedPlayers);
-        ///     // 使用 _cachedPlayers
-        /// }
-        /// </example>
-        public void ToList<T>(List<T> result) where T : IMessage, new()
-        {
-            CollectionConvertHelper.DeserializeToList(Values, result);
-        }
-
-        /// <summary>
-        /// 转换为 List（no-GC 版本，使用 MessageParser，性能更优）
-        /// </summary>
-        /// <typeparam name="T">Protobuf 消息类型</typeparam>
-        /// <param name="result">用于存储结果的 List，会先清空再填充</param>
-        /// <param name="parser">消息解析器</param>
-        public void ToList<T>(List<T> result, MessageParser<T> parser) where T : IMessage<T>
-        {
-            CollectionConvertHelper.DeserializeToList(Values, result, parser);
-        }
-
-        /// <summary>
-        /// 添加一个 Protobuf 消息到列表
-        /// </summary>
-        /// <typeparam name="T">Protobuf 消息类型</typeparam>
-        /// <param name="message">要添加的消息</param>
-        public void Add<T>(T message) where T : IMessage<T>
-        {
-            if (message != null)
-            {
-                Values.Add(message.ToByteString());
-            }
-        }
-
-        /// <summary>
-        /// 添加多个 Protobuf 消息到列表
-        /// </summary>
-        /// <typeparam name="T">Protobuf 消息类型</typeparam>
-        /// <param name="messages">要添加的消息列表</param>
-        public void AddRange<T>(List<T> messages) where T : IMessage<T>
-        {
-            if (messages != null)
-            {
-                foreach (var message in messages)
-                {
-                    if (message != null)
-                    {
-                        Values.Add(message.ToByteString());
-                    }
-                }
-            }
+            if (message != null) Values.Add(message.ToByteString());
         }
     }
 
     #endregion
 
-    #region Map Extensions
+    #region 4. 字典映射扩展 (Map Extensions)
 
     /// <summary>
-    /// IntKeyMap 扩展，提供 Dictionary&lt;int, T&gt; 与 IntKeyMap 之间的转换
-    /// 用于存储以 int 为 key 的序列化 Protobuf 消息字典
+    /// IntKeyMap 消息类型的扩展类，提供字典操作功能
     /// </summary>
     public partial class IntKeyMap
     {
         /// <summary>
-        /// 从 Dictionary&lt;int, T&gt; 创建 IntKeyMap
+        /// 从字典创建 IntKeyMap
         /// </summary>
+        /// <typeparam name="T">实现 IMessage&lt;T&gt; 接口的消息类型</typeparam>
+        /// <param name="dict">源字典</param>
+        /// <returns>包含字典数据的 IntKeyMap 对象</returns>
         public static IntKeyMap From<T>(Dictionary<int, T> dict) where T : IMessage<T>
         {
             var map = new IntKeyMap();
-            if (dict != null)
-            {
-                foreach (var kvp in dict)
-                {
-                    if (kvp.Value != null)
-                    {
-                        map.Entries.Add(new IntKeyEntry
-                        {
-                            Key = kvp.Key,
-                            Value = kvp.Value.ToByteString()
-                        });
-                    }
-                }
-            }
+            CollectionConvertHelper.FillEntriesFromDictionary(dict, map.Entries, 
+                (k, v) => new IntKeyEntry { Key = k, Value = v.ToByteString() });
             return map;
         }
 
         /// <summary>
-        /// 转换为 Dictionary&lt;int, T&gt;（使用 ProtoSerializer）
+        /// 将当前 IntKeyMap 中的条目填充到指定的字典中
         /// </summary>
-        public Dictionary<int, T> ToDictionary<T>() where T : IMessage, new()
-        {
-            if (Entries == null) return new Dictionary<int, T>();
-
-            var result = new Dictionary<int, T>(Entries.Count);
-            for (var i = 0; i < Entries.Count; i++)
-            {
-                try
-                {
-                    var entry = Entries[i];
-                    var message = ProtoSerializer.Deserialize<T>(entry.Value);
-                    if (message != null)
-                    {
-                        result[entry.Key] = message;
-                    }
-                }
-                catch (InvalidProtocolBufferException)
-                {
-                    continue;
-                }
-            }
-            return result;
-        }
+        /// <typeparam name="T">实现 IMessage 接口且具有无参构造函数的消息类型</typeparam>
+        /// <param name="result">用于接收结果的字典</param>
+        public void ToDictionary<T>(Dictionary<int, T> result) where T : IMessage, new() =>
+            CollectionConvertHelper.FillDictionary(Entries, result, e => e.Key, e => ProtoSerializer.Deserialize<T>(e.Value));
 
         /// <summary>
-        /// 转换为 Dictionary&lt;int, T&gt;（使用 MessageParser，性能更优）
+        /// 使用指定的消息解析器将当前 IntKeyMap 中的条目填充到指定的字典中
         /// </summary>
-        public Dictionary<int, T> ToDictionary<T>(MessageParser<T> parser) where T : IMessage<T>
-        {
-            if (Entries == null) return new Dictionary<int, T>();
-
-            var result = new Dictionary<int, T>(Entries.Count);
-            for (var i = 0; i < Entries.Count; i++)
-            {
-                try
-                {
-                    var entry = Entries[i];
-                    var message = ProtoSerializer.Deserialize(entry.Value, parser);
-                    if (message != null)
-                    {
-                        result[entry.Key] = message;
-                    }
-                }
-                catch (InvalidProtocolBufferException)
-                {
-                    continue;
-                }
-            }
-            return result;
-        }
-
-        /// <summary>
-        /// 转换为 Dictionary（no-GC 版本，复用传入的 Dictionary 对象）
-        /// </summary>
-        /// <typeparam name="T">Protobuf 消息类型</typeparam>
-        /// <param name="result">用于存储结果的 Dictionary，会先清空再填充</param>
-        public void ToDictionary<T>(Dictionary<int, T> result) where T : IMessage, new()
-        {
-            CollectionConvertHelper.DeserializeToDictionary(Entries, result, e => e.Key, e => e.Value);
-        }
-
-        /// <summary>
-        /// 转换为 Dictionary（no-GC 版本，使用 MessageParser，性能更优）
-        /// </summary>
-        /// <typeparam name="T">Protobuf 消息类型</typeparam>
-        /// <param name="result">用于存储结果的 Dictionary，会先清空再填充</param>
-        /// <param name="parser">消息解析器</param>
-        public void ToDictionary<T>(Dictionary<int, T> result, MessageParser<T> parser) where T : IMessage<T>
-        {
-            CollectionConvertHelper.DeserializeToDictionary(Entries, result, e => e.Key, e => e.Value, parser);
-        }
+        /// <typeparam name="T">实现 IMessage&lt;T&gt; 接口的消息类型</typeparam>
+        /// <param name="result">用于接收结果的字典</param>
+        /// <param name="parser">用于反序列化消息的解析器</param>
+        public void ToDictionary<T>(Dictionary<int, T> result, MessageParser<T> parser) where T : IMessage<T> =>
+            CollectionConvertHelper.FillDictionary(Entries, result, e => e.Key, e => ProtoSerializer.Deserialize(e.Value, parser));
     }
 
     /// <summary>
-    /// LongKeyMap 扩展，提供 Dictionary&lt;long, T&gt; 与 LongKeyMap 之间的转换
-    /// 用于存储以 long 为 key 的序列化 Protobuf 消息字典
+    /// LongKeyMap 消息类型的扩展类，提供字典操作功能
     /// </summary>
-    public partial class LongKeyMap
+    public partial class LongKeyMap 
     {
         /// <summary>
-        /// 从 Dictionary&lt;long, T&gt; 创建 LongKeyMap
+        /// 从字典创建 LongKeyMap
         /// </summary>
+        /// <typeparam name="T">实现 IMessage&lt;T&gt; 接口的消息类型</typeparam>
+        /// <param name="dict">源字典</param>
+        /// <returns>包含字典数据的 LongKeyMap 对象</returns>
         public static LongKeyMap From<T>(Dictionary<long, T> dict) where T : IMessage<T>
         {
             var map = new LongKeyMap();
-            if (dict != null)
-            {
-                foreach (var kvp in dict)
-                {
-                    if (kvp.Value != null)
-                    {
-                        map.Entries.Add(new LongKeyEntry
-                        {
-                            Key = kvp.Key,
-                            Value = kvp.Value.ToByteString()
-                        });
-                    }
-                }
-            }
+            CollectionConvertHelper.FillEntriesFromDictionary(dict, map.Entries, 
+                (k, v) => new LongKeyEntry { Key = k, Value = v.ToByteString() });
             return map;
         }
 
         /// <summary>
-        /// 转换为 Dictionary&lt;long, T&gt;（使用 ProtoSerializer）
+        /// 将当前 LongKeyMap 中的条目填充到指定的字典中
         /// </summary>
-        public Dictionary<long, T> ToDictionary<T>() where T : IMessage, new()
-        {
-            if (Entries == null) return new Dictionary<long, T>();
-
-            var result = new Dictionary<long, T>(Entries.Count);
-            for (var i = 0; i < Entries.Count; i++)
-            {
-                try
-                {
-                    var entry = Entries[i];
-                    var message = ProtoSerializer.Deserialize<T>(entry.Value);
-                    if (message != null)
-                    {
-                        result[entry.Key] = message;
-                    }
-                }
-                catch (InvalidProtocolBufferException)
-                {
-                    continue;
-                }
-            }
-            return result;
-        }
+        /// <typeparam name="T">实现 IMessage 接口且具有无参构造函数的消息类型</typeparam>
+        /// <param name="result">用于接收结果的字典</param>
+        public void ToDictionary<T>(Dictionary<long, T> result) where T : IMessage, new() =>
+            CollectionConvertHelper.FillDictionary(Entries, result, e => e.Key, e => ProtoSerializer.Deserialize<T>(e.Value));
 
         /// <summary>
-        /// 转换为 Dictionary&lt;long, T&gt;（使用 MessageParser，性能更优）
+        /// 使用指定的消息解析器将当前 LongKeyMap 中的条目填充到指定的字典中
         /// </summary>
-        public Dictionary<long, T> ToDictionary<T>(MessageParser<T> parser) where T : IMessage<T>
-        {
-            if (Entries == null) return new Dictionary<long, T>();
-
-            var result = new Dictionary<long, T>(Entries.Count);
-            for (var i = 0; i < Entries.Count; i++)
-            {
-                try
-                {
-                    var entry = Entries[i];
-                    var message = ProtoSerializer.Deserialize(entry.Value, parser);
-                    if (message != null)
-                    {
-                        result[entry.Key] = message;
-                    }
-                }
-                catch (InvalidProtocolBufferException)
-                {
-                    continue;
-                }
-            }
-            return result;
-        }
-
-        /// <summary>
-        /// 转换为 Dictionary（no-GC 版本，复用传入的 Dictionary 对象）
-        /// </summary>
-        /// <typeparam name="T">Protobuf 消息类型</typeparam>
-        /// <param name="result">用于存储结果的 Dictionary，会先清空再填充</param>
-        public void ToDictionary<T>(Dictionary<long, T> result) where T : IMessage, new()
-        {
-            CollectionConvertHelper.DeserializeToDictionary(Entries, result, e => e.Key, e => e.Value);
-        }
-
-        /// <summary>
-        /// 转换为 Dictionary（no-GC 版本，使用 MessageParser，性能更优）
-        /// </summary>
-        /// <typeparam name="T">Protobuf 消息类型</typeparam>
-        /// <param name="result">用于存储结果的 Dictionary，会先清空再填充</param>
-        /// <param name="parser">消息解析器</param>
-        public void ToDictionary<T>(Dictionary<long, T> result, MessageParser<T> parser) where T : IMessage<T>
-        {
-            CollectionConvertHelper.DeserializeToDictionary(Entries, result, e => e.Key, e => e.Value, parser);
-        }
+        /// <typeparam name="T">实现 IMessage&lt;T&gt; 接口的消息类型</typeparam>
+        /// <param name="result">用于接收结果的字典</param>
+        /// <param name="parser">用于反序列化消息的解析器</param>
+        public void ToDictionary<T>(Dictionary<long, T> result, MessageParser<T> parser) where T : IMessage<T> =>
+            CollectionConvertHelper.FillDictionary(Entries, result, e => e.Key, e => ProtoSerializer.Deserialize(e.Value, parser));
     }
 
-    /// <summary>
-    /// StringKeyMap 扩展，提供 Dictionary&lt;string, T&gt; 与 StringKeyMap 之间的转换
-    /// 用于存储以 string 为 key 的序列化 Protobuf 消息字典
-    /// </summary>
     public partial class StringKeyMap
     {
         /// <summary>
-        /// 从 Dictionary&lt;string, T&gt; 创建 StringKeyMap
+        /// 从字典创建 StringKeyMap
         /// </summary>
+        /// <typeparam name="T">实现 IMessage&lt;T&gt; 接口的消息类型</typeparam>
+        /// <param name="dict">源字典</param>
+        /// <returns>包含字典数据的 StringKeyMap 对象</returns>
         public static StringKeyMap From<T>(Dictionary<string, T> dict) where T : IMessage<T>
         {
             var map = new StringKeyMap();
-            if (dict != null)
-            {
-                foreach (var kvp in dict)
-                {
-                    if (kvp.Value != null)
-                    {
-                        map.Entries.Add(new StringKeyEntry
-                        {
-                            Key = kvp.Key ?? string.Empty,
-                            Value = kvp.Value.ToByteString()
-                        });
-                    }
-                }
-            }
+            CollectionConvertHelper.FillEntriesFromDictionary(dict, map.Entries, 
+                (k, v) => new StringKeyEntry { Key = k, Value = v.ToByteString() });
             return map;
         }
 
         /// <summary>
-        /// 转换为 Dictionary&lt;string, T&gt;（使用 ProtoSerializer）
+        /// 将当前 StringKeyMap 中的条目填充到指定的字典中
         /// </summary>
-        public Dictionary<string, T> ToDictionary<T>() where T : IMessage, new()
-        {
-            if (Entries == null) return new Dictionary<string, T>();
+        /// <typeparam name="T">实现 IMessage 接口且具有无参构造函数的消息类型</typeparam>
+        /// <param name="result">用于接收结果的字典</param>
+        public void ToDictionary<T>(Dictionary<string, T> result) where T : IMessage, new() =>
+            CollectionConvertHelper.FillDictionary(Entries, result, e => e.Key, e => ProtoSerializer.Deserialize<T>(e.Value));
 
-            var result = new Dictionary<string, T>(Entries.Count);
-            for (var i = 0; i < Entries.Count; i++)
-            {
-                try
-                {
-                    var entry = Entries[i];
-                    var message = ProtoSerializer.Deserialize<T>(entry.Value);
-                    if (message != null)
-                    {
-                        result[entry.Key] = message;
-                    }
-                }
-                catch (InvalidProtocolBufferException)
-                {
-                    continue;
-                }
-            }
-            return result;
+        /// <summary>
+        /// 使用指定的消息解析器将当前 StringKeyMap 中的条目填充到指定的字典中
+        /// </summary>
+        /// <typeparam name="T">实现 IMessage&lt;T&gt; 接口的消息类型</typeparam>
+        /// <param name="result">用于接收结果的字典</param>
+        /// <param name="parser">用于反序列化消息的解析器</param>
+        public void ToDictionary<T>(Dictionary<string, T> result, MessageParser<T> parser) where T : IMessage<T> =>
+            CollectionConvertHelper.FillDictionary(Entries, result, e => e.Key, e => ProtoSerializer.Deserialize(e.Value, parser));
+    }
+
+    /// <summary>
+    /// ByteValueMap 消息类型的扩展类，提供字典操作功能
+    /// </summary>
+    public partial class ByteValueMap
+    {
+        /// <summary>
+        /// 从字典创建 ByteValueMap
+        /// </summary>
+        /// <typeparam name="T">实现 IMessage&lt;T&gt; 接口的消息类型</typeparam>
+        /// <param name="dict">源字典</param>
+        /// <returns>包含字典数据的 ByteValueMap 对象</returns>
+        public static ByteValueMap From<T>(Dictionary<ByteString, T> dict) where T : IMessage<T>
+        {
+            var map = new ByteValueMap();
+            CollectionConvertHelper.FillEntriesFromDictionary(dict, map.Entries, 
+                (k, v) => new ByteValueEntry { Key = k, Value = v.ToByteString() });
+            return map;
         }
 
         /// <summary>
-        /// 转换为 Dictionary&lt;string, T&gt;（使用 MessageParser，性能更优）
+        /// 将当前 ByteValueMap 中的条目填充到指定的字典中
         /// </summary>
-        public Dictionary<string, T> ToDictionary<T>(MessageParser<T> parser) where T : IMessage<T>
-        {
-            if (Entries == null) return new Dictionary<string, T>();
-
-            var result = new Dictionary<string, T>(Entries.Count);
-            for (var i = 0; i < Entries.Count; i++)
-            {
-                try
-                {
-                    var entry = Entries[i];
-                    var message = ProtoSerializer.Deserialize(entry.Value, parser);
-                    if (message != null)
-                    {
-                        result[entry.Key] = message;
-                    }
-                }
-                catch (InvalidProtocolBufferException)
-                {
-                    continue;
-                }
-            }
-            return result;
-        }
+        /// <typeparam name="T">实现 IMessage 接口且具有无参构造函数的消息类型</typeparam>
+        /// <param name="result">用于接收结果的字典</param>
+        public void ToDictionary<T>(Dictionary<ByteString, T> result) where T : IMessage, new() =>
+            CollectionConvertHelper.FillDictionary(Entries, result, e => e.Key, e => ProtoSerializer.Deserialize<T>(e.Value));
 
         /// <summary>
-        /// 转换为 Dictionary（no-GC 版本，复用传入的 Dictionary 对象）
+        /// 使用指定的消息解析器将当前 ByteValueMap 中的条目填充到指定的字典中
         /// </summary>
-        /// <typeparam name="T">Protobuf 消息类型</typeparam>
-        /// <param name="result">用于存储结果的 Dictionary，会先清空再填充</param>
-        public void ToDictionary<T>(Dictionary<string, T> result) where T : IMessage, new()
-        {
-            CollectionConvertHelper.DeserializeToDictionary(Entries, result, e => e.Key, e => e.Value);
-        }
-
-        /// <summary>
-        /// 转换为 Dictionary（no-GC 版本，使用 MessageParser，性能更优）
-        /// </summary>
-        /// <typeparam name="T">Protobuf 消息类型</typeparam>
-        /// <param name="result">用于存储结果的 Dictionary，会先清空再填充</param>
-        /// <param name="parser">消息解析器</param>
-        public void ToDictionary<T>(Dictionary<string, T> result, MessageParser<T> parser) where T : IMessage<T>
-        {
-            CollectionConvertHelper.DeserializeToDictionary(Entries, result, e => e.Key, e => e.Value, parser);
-        }
+        /// <typeparam name="T">实现 IMessage&lt;T&gt; 接口的消息类型</typeparam>
+        /// <param name="result">用于接收结果的字典</param>
+        /// <param name="parser">用于反序列化消息的解析器</param>
+        public void ToDictionary<T>(Dictionary<ByteString, T> result, MessageParser<T> parser) where T : IMessage<T> =>
+            CollectionConvertHelper.FillDictionary(Entries, result, e => e.Key, e => ProtoSerializer.Deserialize(e.Value, parser));
     }
 
     #endregion
 
-    #region Vector Extensions
+    #region 5. Vector 扩展 (Unity 集成)
 
     /// <summary>
-    /// Vector2 扩展，提供 UnityEngine.Vector2 与 Vector2 之间的隐式转换
+    /// Vector2 消息类型的扩展类，提供与 Unity Vector2 的隐式转换
     /// </summary>
-    public partial class Vector2
+    public partial class Vector2 
     {
         /// <summary>
-        /// 从 UnityEngine.Vector2 隐式转换为 Vector2
+        /// 将 Unity Vector2 隐式转换为 Vector2 消息类型
         /// </summary>
-        public static implicit operator Vector2(UnityEngine.Vector2 value)
-        {
-            return new Vector2 { X = value.x, Y = value.y };
-        }
-
+        /// <param name="v">要转换的 Unity Vector2 对象</param>
+        /// <returns>包含相同坐标值的 Vector2 消息对象</returns>
+        public static implicit operator Vector2(UnityEngine.Vector2 v) => new() { X = v.x, Y = v.y };
+        
         /// <summary>
-        /// 从 Vector2 隐式转换为 UnityEngine.Vector2
+        /// 将 Vector2 消息类型隐式转换为 Unity Vector2
         /// </summary>
-        public static implicit operator UnityEngine.Vector2(Vector2 wrapper)
-        {
-            return wrapper != null
-                ? new UnityEngine.Vector2(wrapper.X, wrapper.Y)
-                : UnityEngine.Vector2.zero;
-        }
+        /// <param name="v">Vector2 消息对象</param>
+        /// <returns>包含相同坐标值的 Unity Vector2 对象，如果消息对象为 null 则返回 Vector2.zero</returns>
+        public static implicit operator UnityEngine.Vector2(Vector2 v) => v != null ? new UnityEngine.Vector2(v.X, v.Y) : UnityEngine.Vector2.zero;
     }
 
     /// <summary>
-    /// Vector2Int 扩展，提供 UnityEngine.Vector2Int 与 Vector2Int 之间的隐式转换
+    /// Vector3 消息类型的扩展类，提供与 Unity Vector3 的隐式转换
     /// </summary>
-    public partial class Vector2Int
+    public partial class Vector3 
     {
         /// <summary>
-        /// 从 UnityEngine.Vector2Int 隐式转换为 Vector2Int
+        /// 将 Unity Vector3 隐式转换为 Vector3 消息类型
         /// </summary>
-        public static implicit operator Vector2Int(UnityEngine.Vector2Int value)
-        {
-            return new Vector2Int { X = value.x, Y = value.y };
-        }
-
+        /// <param name="v">要转换的 Unity Vector3 对象</param>
+        /// <returns>包含相同坐标值的 Vector3 消息对象</returns>
+        public static implicit operator Vector3(UnityEngine.Vector3 v) => new() { X = v.x, Y = v.y, Z = v.z };
+        
         /// <summary>
-        /// 从 Vector2Int 隐式转换为 UnityEngine.Vector2Int
+        /// 将 Vector3 消息类型隐式转换为 Unity Vector3
         /// </summary>
-        public static implicit operator UnityEngine.Vector2Int(Vector2Int wrapper)
-        {
-            return wrapper != null
-                ? new UnityEngine.Vector2Int(wrapper.X, wrapper.Y)
-                : UnityEngine.Vector2Int.zero;
-        }
+        /// <param name="v">Vector3 消息对象</param>
+        /// <returns>包含相同坐标值的 Unity Vector3 对象，如果消息对象为 null 则返回 Vector3.zero</returns>
+        public static implicit operator UnityEngine.Vector3(Vector3 v) => v != null ? new UnityEngine.Vector3(v.X, v.Y, v.Z) : UnityEngine.Vector3.zero;
     }
 
     /// <summary>
-    /// Vector3 扩展，提供 UnityEngine.Vector3 与 Vector3 之间的隐式转换
+    /// Vector3List 消息类型的扩展类，提供与 Unity Vector3 列表的转换功能
     /// </summary>
-    public partial class Vector3
+    public partial class Vector3List 
     {
+        // No-GC: RepeatedField<Vector3> -> List<UnityEngine.Vector3>
         /// <summary>
-        /// 从 UnityEngine.Vector3 隐式转换为 Vector3
+        /// 将当前 Vector3List 中的值填充到指定的 Unity Vector3 列表中
         /// </summary>
-        public static implicit operator Vector3(UnityEngine.Vector3 value)
-        {
-            return new Vector3 { X = value.x, Y = value.y, Z = value.z };
-        }
-
-        /// <summary>
-        /// 从 Vector3 隐式转换为 UnityEngine.Vector3
-        /// </summary>
-        public static implicit operator UnityEngine.Vector3(Vector3 wrapper)
-        {
-            return wrapper != null
-                ? new UnityEngine.Vector3(wrapper.X, wrapper.Y, wrapper.Z)
-                : UnityEngine.Vector3.zero;
-        }
-    }
-
-    /// <summary>
-    /// Vector3Int 扩展，提供 UnityEngine.Vector3Int 与 Vector3Int 之间的隐式转换
-    /// </summary>
-    public partial class Vector3Int
-    {
-        /// <summary>
-        /// 从 UnityEngine.Vector3Int 隐式转换为 Vector3Int
-        /// </summary>
-        public static implicit operator Vector3Int(UnityEngine.Vector3Int value)
-        {
-            return new Vector3Int { X = value.x, Y = value.y, Z = value.z };
-        }
+        /// <param name="result">用于接收结果的 Unity Vector3 列表</param>
+        public void ToList(List<UnityEngine.Vector3> result) => CollectionConvertHelper.FillList(Values, result, v => (UnityEngine.Vector3)v);
 
         /// <summary>
-        /// 从 Vector3Int 隐式转换为 UnityEngine.Vector3Int
+        /// 将 Unity Vector3 列表隐式转换为 Vector3List
         /// </summary>
-        public static implicit operator UnityEngine.Vector3Int(Vector3Int wrapper)
-        {
-            return wrapper != null
-                ? new UnityEngine.Vector3Int(wrapper.X, wrapper.Y, wrapper.Z)
-                : UnityEngine.Vector3Int.zero;
-        }
-    }
-
-    /// <summary>
-    /// Vector2List 扩展，提供 List&lt;UnityEngine.Vector2&gt; 与 Vector2List 之间的隐式转换
-    /// </summary>
-    public partial class Vector2List
-    {
-        /// <summary>
-        /// 从 List&lt;UnityEngine.Vector2&gt; 隐式转换为 Vector2List
-        /// </summary>
-        public static implicit operator Vector2List(List<UnityEngine.Vector2> values)
-        {
-            var list = new Vector2List();
-            if (values != null)
-            {
-                foreach (var v in values)
-                {
-                    list.Values.Add(new Vector2 { X = v.x, Y = v.y });
-                }
-            }
-            return list;
-        }
-
-        /// <summary>
-        /// 从 UnityEngine.Vector2[] 隐式转换为 Vector2List
-        /// </summary>
-        public static implicit operator Vector2List(UnityEngine.Vector2[] values)
-        {
-            var list = new Vector2List();
-            if (values != null)
-            {
-                foreach (var v in values)
-                {
-                    list.Values.Add(new Vector2 { X = v.x, Y = v.y });
-                }
-            }
-            return list;
-        }
-
-        /// <summary>
-        /// 从 Vector2List 隐式转换为 List&lt;UnityEngine.Vector2&gt;
-        /// </summary>
-        public static implicit operator List<UnityEngine.Vector2>(Vector2List wrapper)
-        {
-            if (wrapper?.Values == null) return new List<UnityEngine.Vector2>();
-
-            var result = new List<UnityEngine.Vector2>(wrapper.Values.Count);
-            for (int i = 0; i < wrapper.Values.Count; i++)
-            {
-                var v = wrapper.Values[i];
-                result.Add(new UnityEngine.Vector2(v.X, v.Y));
-            }
-            return result;
-        }
-
-        /// <summary>
-        /// 转换为 List（no-GC 版本，复用传入的 List 对象）
-        /// </summary>
-        /// <param name="result">用于存储结果的 List，会先清空再填充</param>
-        /// <example>
-        /// // 高频调用场景，避免 GC
-        /// private List&lt;UnityEngine.Vector2&gt; _cachedList = new List&lt;UnityEngine.Vector2&gt;(100);
-        ///
-        /// void Update()
-        /// {
-        ///     vector2List.ToList(_cachedList);
-        ///     // 使用 _cachedList
-        /// }
-        /// </example>
-        public void ToList(List<UnityEngine.Vector2> result)
-        {
-            if (result == null) return;
-
-            result.Clear();
-            if (Values == null) return;
-
-            if (result.Capacity < Values.Count)
-            {
-                result.Capacity = Values.Count;
-            }
-
-            for (int i = 0; i < Values.Count; i++)
-            {
-                var v = Values[i];
-                result.Add(new UnityEngine.Vector2(v.X, v.Y));
-            }
-        }
-    }
-
-    /// <summary>
-    /// Vector2IntList 扩展，提供 List&lt;UnityEngine.Vector2Int&gt; 与 Vector2IntList 之间的隐式转换
-    /// </summary>
-    public partial class Vector2IntList
-    {
-        /// <summary>
-        /// 从 List&lt;UnityEngine.Vector2Int&gt; 隐式转换为 Vector2IntList
-        /// </summary>
-        public static implicit operator Vector2IntList(List<UnityEngine.Vector2Int> values)
-        {
-            var list = new Vector2IntList();
-            if (values != null)
-            {
-                foreach (var v in values)
-                {
-                    list.Values.Add(new Vector2Int { X = v.x, Y = v.y });
-                }
-            }
-            return list;
-        }
-
-        /// <summary>
-        /// 从 UnityEngine.Vector2Int[] 隐式转换为 Vector2IntList
-        /// </summary>
-        public static implicit operator Vector2IntList(UnityEngine.Vector2Int[] values)
-        {
-            var list = new Vector2IntList();
-            if (values != null)
-            {
-                foreach (var v in values)
-                {
-                    list.Values.Add(new Vector2Int { X = v.x, Y = v.y });
-                }
-            }
-            return list;
-        }
-
-        /// <summary>
-        /// 从 Vector2IntList 隐式转换为 List&lt;UnityEngine.Vector2Int&gt;
-        /// </summary>
-        public static implicit operator List<UnityEngine.Vector2Int>(Vector2IntList wrapper)
-        {
-            if (wrapper?.Values == null) return new List<UnityEngine.Vector2Int>();
-
-            var result = new List<UnityEngine.Vector2Int>(wrapper.Values.Count);
-            for (int i = 0; i < wrapper.Values.Count; i++)
-            {
-                var v = wrapper.Values[i];
-                result.Add(new UnityEngine.Vector2Int(v.X, v.Y));
-            }
-            return result;
-        }
-
-        /// <summary>
-        /// 转换为 List（no-GC 版本，复用传入的 List 对象）
-        /// </summary>
-        public void ToList(List<UnityEngine.Vector2Int> result)
-        {
-            if (result == null) return;
-
-            result.Clear();
-            if (Values == null) return;
-
-            if (result.Capacity < Values.Count)
-            {
-                result.Capacity = Values.Count;
-            }
-
-            for (int i = 0; i < Values.Count; i++)
-            {
-                var v = Values[i];
-                result.Add(new UnityEngine.Vector2Int(v.X, v.Y));
-            }
-        }
-    }
-
-    /// <summary>
-    /// Vector3List 扩展，提供 List&lt;UnityEngine.Vector3&gt; 与 Vector3List 之间的隐式转换
-    /// </summary>
-    public partial class Vector3List
-    {
-        /// <summary>
-        /// 从 List&lt;UnityEngine.Vector3&gt; 隐式转换为 Vector3List
-        /// </summary>
-        public static implicit operator Vector3List(List<UnityEngine.Vector3> values)
+        /// <param name="values">要转换的 Unity Vector3 列表</param>
+        /// <returns>包含指定值的 Vector3List 对象</returns>
+        public static implicit operator Vector3List(List<UnityEngine.Vector3> values) 
         {
             var list = new Vector3List();
-            if (values != null)
-            {
-                foreach (var v in values)
-                {
-                    list.Values.Add(new Vector3 { X = v.x, Y = v.y, Z = v.z });
-                }
-            }
+            CollectionConvertHelper.FillRepeatedField(values, list.Values, v => v);
             return list;
-        }
-
-        /// <summary>
-        /// 从 UnityEngine.Vector3[] 隐式转换为 Vector3List
-        /// </summary>
-        public static implicit operator Vector3List(UnityEngine.Vector3[] values)
-        {
-            var list = new Vector3List();
-            if (values != null)
-            {
-                foreach (var v in values)
-                {
-                    list.Values.Add(new Vector3 { X = v.x, Y = v.y, Z = v.z });
-                }
-            }
-            return list;
-        }
-
-        /// <summary>
-        /// 从 Vector3List 隐式转换为 List&lt;UnityEngine.Vector3&gt;
-        /// </summary>
-        public static implicit operator List<UnityEngine.Vector3>(Vector3List wrapper)
-        {
-            if (wrapper?.Values == null) return new List<UnityEngine.Vector3>();
-
-            var result = new List<UnityEngine.Vector3>(wrapper.Values.Count);
-            for (int i = 0; i < wrapper.Values.Count; i++)
-            {
-                var v = wrapper.Values[i];
-                result.Add(new UnityEngine.Vector3(v.X, v.Y, v.Z));
-            }
-            return result;
-        }
-
-        /// <summary>
-        /// 转换为 List（no-GC 版本，复用传入的 List 对象）
-        /// </summary>
-        public void ToList(List<UnityEngine.Vector3> result)
-        {
-            if (result == null) return;
-
-            result.Clear();
-            if (Values == null) return;
-
-            if (result.Capacity < Values.Count)
-            {
-                result.Capacity = Values.Count;
-            }
-
-            for (int i = 0; i < Values.Count; i++)
-            {
-                var v = Values[i];
-                result.Add(new UnityEngine.Vector3(v.X, v.Y, v.Z));
-            }
         }
     }
 
     /// <summary>
-    /// Vector3IntList 扩展，提供 List&lt;UnityEngine.Vector3Int&gt; 与 Vector3IntList 之间的隐式转换
+    /// Vector2Int 消息类型的扩展类，提供与 Unity Vector2Int 的隐式转换
     /// </summary>
-    public partial class Vector3IntList
+    public partial class Vector2Int 
     {
         /// <summary>
-        /// 从 List&lt;UnityEngine.Vector3Int&gt; 隐式转换为 Vector3IntList
+        /// 将 Unity Vector2Int 隐式转换为 Vector2Int 消息类型
         /// </summary>
-        public static implicit operator Vector3IntList(List<UnityEngine.Vector3Int> values)
+        /// <param name="v">要转换的 Unity Vector2Int 对象</param>
+        /// <returns>包含相同坐标值的 Vector2Int 消息对象</returns>
+        public static implicit operator Vector2Int(UnityEngine.Vector2Int v) => new() { X = v.x, Y = v.y };
+        
+        /// <summary>
+        /// 将 Vector2Int 消息类型隐式转换为 Unity Vector2Int
+        /// </summary>
+        /// <param name="v">Vector2Int 消息对象</param>
+        /// <returns>包含相同坐标值的 Unity Vector2Int 对象，如果消息对象为 null 则返回 Vector2Int.zero</returns>
+        public static implicit operator UnityEngine.Vector2Int(Vector2Int v) => v != null ? new UnityEngine.Vector2Int(v.X, v.Y) : UnityEngine.Vector2Int.zero;
+    }
+
+    /// <summary>
+    /// Vector3Int 消息类型的扩展类，提供与 Unity Vector3Int 的隐式转换
+    /// </summary>
+    public partial class Vector3Int 
+    {
+        /// <summary>
+        /// 将 Unity Vector3Int 隐式转换为 Vector3Int 消息类型
+        /// </summary>
+        /// <param name="v">要转换的 Unity Vector3Int 对象</param>
+        /// <returns>包含相同坐标值的 Vector3Int 消息对象</returns>
+        public static implicit operator Vector3Int(UnityEngine.Vector3Int v) => new() { X = v.x, Y = v.y, Z = v.z };
+        
+        /// <summary>
+        /// 将 Vector3Int 消息类型隐式转换为 Unity Vector3Int
+        /// </summary>
+        /// <param name="v">Vector3Int 消息对象</param>
+        /// <returns>包含相同坐标值的 Unity Vector3Int 对象，如果消息对象为 null 则返回 Vector3Int.zero</returns>
+        public static implicit operator UnityEngine.Vector3Int(Vector3Int v) => v != null ? new UnityEngine.Vector3Int(v.X, v.Y, v.Z) : UnityEngine.Vector3Int.zero;
+    }
+
+    /// <summary>
+    /// Vector2List 消息类型的扩展类，提供与 Unity Vector2 列表的转换功能
+    /// </summary>
+    public partial class Vector2List 
+    {
+        /// <summary>
+        /// 将当前 Vector2List 中的值填充到指定的 Unity Vector2 列表中
+        /// </summary>
+        /// <param name="result">用于接收结果的 Unity Vector2 列表</param>
+        public void ToList(List<UnityEngine.Vector2> result) => CollectionConvertHelper.FillList(Values, result, v => (UnityEngine.Vector2)v);
+
+        /// <summary>
+        /// 将 Unity Vector2 列表隐式转换为 Vector2List
+        /// </summary>
+        /// <param name="values">要转换的 Unity Vector2 列表</param>
+        /// <returns>包含指定值的 Vector2List 对象</returns>
+        public static implicit operator Vector2List(List<UnityEngine.Vector2> values) 
         {
-            var list = new Vector3IntList();
-            if (values != null)
-            {
-                foreach (var v in values)
-                {
-                    list.Values.Add(new Vector3Int { X = v.x, Y = v.y, Z = v.z });
-                }
-            }
+            var list = new Vector2List();
+            CollectionConvertHelper.FillRepeatedField(values, list.Values, v => v);
             return list;
         }
+    }
+
+    /// <summary>
+    /// Vector2IntList 消息类型的扩展类，提供与 Unity Vector2Int 列表的转换功能
+    /// </summary>
+    public partial class Vector2IntList 
+    {
+        /// <summary>
+        /// 将当前 Vector2IntList 中的值填充到指定的 Unity Vector2Int 列表中
+        /// </summary>
+        /// <param name="result">用于接收结果的 Unity Vector2Int 列表</param>
+        public void ToList(List<UnityEngine.Vector2Int> result) => CollectionConvertHelper.FillList(Values, result, v => (UnityEngine.Vector2Int)v);
 
         /// <summary>
-        /// 从 UnityEngine.Vector3Int[] 隐式转换为 Vector3IntList
+        /// 将 Unity Vector2Int 列表隐式转换为 Vector2IntList
         /// </summary>
-        public static implicit operator Vector3IntList(UnityEngine.Vector3Int[] values)
+        /// <param name="values">要转换的 Unity Vector2Int 列表</param>
+        /// <returns>包含指定值的 Vector2IntList 对象</returns>
+        public static implicit operator Vector2IntList(List<UnityEngine.Vector2Int> values) 
         {
-            var list = new Vector3IntList();
-            if (values != null)
-            {
-                foreach (var v in values)
-                {
-                    list.Values.Add(new Vector3Int { X = v.x, Y = v.y, Z = v.z });
-                }
-            }
+            var list = new Vector2IntList();
+            CollectionConvertHelper.FillRepeatedField(values, list.Values, v => v);
             return list;
         }
+    }
+
+    /// <summary>
+    /// Vector3IntList 消息类型的扩展类，提供与 Unity Vector3Int 列表的转换功能
+    /// </summary>
+    public partial class Vector3IntList 
+    {
+        /// <summary>
+        /// 将当前 Vector3IntList 中的值填充到指定的 Unity Vector3Int 列表中
+        /// </summary>
+        /// <param name="result">用于接收结果的 Unity Vector3Int 列表</param>
+        public void ToList(List<UnityEngine.Vector3Int> result) => CollectionConvertHelper.FillList(Values, result, v => (UnityEngine.Vector3Int)v);
 
         /// <summary>
-        /// 从 Vector3IntList 隐式转换为 List&lt;UnityEngine.Vector3Int&gt;
+        /// 将 Unity Vector3Int 列表隐式转换为 Vector3IntList
         /// </summary>
-        public static implicit operator List<UnityEngine.Vector3Int>(Vector3IntList wrapper)
+        /// <param name="values">要转换的 Unity Vector3Int 列表</param>
+        /// <returns>包含指定值的 Vector3IntList 对象</returns>
+        public static implicit operator Vector3IntList(List<UnityEngine.Vector3Int> values) 
         {
-            if (wrapper?.Values == null) return new List<UnityEngine.Vector3Int>();
-
-            var result = new List<UnityEngine.Vector3Int>(wrapper.Values.Count);
-            for (var i = 0; i < wrapper.Values.Count; i++)
-            {
-                var v = wrapper.Values[i];
-                result.Add(new UnityEngine.Vector3Int(v.X, v.Y, v.Z));
-            }
-            return result;
-        }
-
-        /// <summary>
-        /// 转换为 List（no-GC 版本，复用传入的 List 对象）
-        /// </summary>
-        public void ToList(List<UnityEngine.Vector3Int> result)
-        {
-            if (result == null) return;
-
-            result.Clear();
-            if (Values == null) return;
-
-            if (result.Capacity < Values.Count)
-            {
-                result.Capacity = Values.Count;
-            }
-
-            for (int i = 0; i < Values.Count; i++)
-            {
-                var v = Values[i];
-                result.Add(new UnityEngine.Vector3Int(v.X, v.Y, v.Z));
-            }
+            var list = new Vector3IntList();
+            CollectionConvertHelper.FillRepeatedField(values, list.Values, v => v);
+            return list;
         }
     }
 

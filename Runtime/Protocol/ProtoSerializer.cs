@@ -22,8 +22,7 @@ namespace Pisces.Protocol
         /// <summary>
         /// 反序列化（使用 new + MergeFrom 方式）
         /// </summary>
-        public static T Deserialize<T>(ByteString data)
-            where T : IMessage, new()
+        public static T Deserialize<T>(ByteString data) where T : IMessage, new()
         {
             if (data == null || data.IsEmpty)
                 return default;
@@ -37,8 +36,7 @@ namespace Pisces.Protocol
         /// <summary>
         /// 反序列化（使用 new + MergeFrom 方式）
         /// </summary>
-        public static T Deserialize<T>(byte[] data)
-            where T : IMessage, new()
+        public static T Deserialize<T>(byte[] data) where T : IMessage, new()
         {
             if (data == null || data.Length == 0)
                 return default;
@@ -52,8 +50,7 @@ namespace Pisces.Protocol
         /// <summary>
         /// 反序列化（带偏移和长度）
         /// </summary>
-        public static T Deserialize<T>(byte[] data, int offset, int count)
-            where T : IMessage, new()
+        public static T Deserialize<T>(byte[] data, int offset, int count) where T : IMessage, new()
         {
             if (data == null || data.Length == 0 || count == 0)
                 return default;

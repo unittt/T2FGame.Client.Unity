@@ -184,6 +184,20 @@ namespace Pisces.Client.Sdk
         
         #endregion
 
+        #region 泛型列表重载
+
+        /// <summary>
+        /// 创建一个包含 Protobuf 消息列表的请求命令实例。
+        /// </summary>
+        /// <typeparam name="T">Protobuf 消息类型</typeparam>
+        /// <param name="cmdMerge">业务路由标识</param>
+        /// <param name="data">消息列表数据</param>
+        /// <example>RequestCommand.Of(cmdMerge, myMessageList);</example>
+        public static RequestCommand Of<T>(int cmdMerge, List<T> data) where T : IMessage<T>
+            => Of(cmdMerge, ByteValueList.From(data));
+
+        #endregion
+
         #region 字典类型重载
 
         /// <summary>

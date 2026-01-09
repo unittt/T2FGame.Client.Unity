@@ -677,6 +677,9 @@ public sealed class ResponseMessage
     public IReadOnlyList<Vector3> ListVector3();
     public IReadOnlyList<Vector3Int> ListVector3Int();
 
+    // 泛型列表访问器（复用传入的列表容器）
+    public void GetList<T>(List<T> result) where T : IMessage, new();
+
     // 字典访问器（复用传入的字典容器）
     public void GetDictionary<T>(Dictionary<int, T> result) where T : IMessage, new();
     public void GetDictionary<T>(Dictionary<long, T> result) where T : IMessage, new();
@@ -720,6 +723,13 @@ UserAction.OfLogin(request, result => {
     var waypoints = result.ListVector3(); // IReadOnlyList<Vector3>
     for (int i = 0; i < waypoints.Count; i++) {
         pathNodes[i].position = waypoints[i];
+    }
+
+    // 泛型列表（复用容器）
+    var enemies = new List<EnemyData>();
+    result.GetList(enemies);  // 填充到传入的列表
+    foreach (var enemy in enemies) {
+        SpawnEnemy(enemy);
     }
 
     // 字典数据（复用容器）

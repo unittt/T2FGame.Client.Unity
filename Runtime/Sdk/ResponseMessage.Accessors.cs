@@ -122,6 +122,21 @@ namespace Pisces.Client.Sdk
 
         #endregion
 
+        #region 泛型列表访问器
+
+        /// <summary>
+        /// 获取 Protobuf 消息列表，填充到指定结果列表中（复用传入的列表容器）。
+        /// </summary>
+        /// <typeparam name="T">Protobuf 消息类型</typeparam>
+        /// <param name="result">用于接收结果的列表</param>
+        public void GetList<T>(List<T> result) where T : IMessage, new()
+        {
+            var list = GetValue<ByteValueList>();
+            list?.ToList(result);
+        }
+
+        #endregion
+
         #region 字典访问器
 
         /// <summary>

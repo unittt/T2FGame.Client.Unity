@@ -441,7 +441,7 @@ public class AdvancedRequestExample : MonoBehaviour
             "hello"  // 自动转换为 StringValue
         );
 
-        // 以上方法内部都自动使用对象池，零 GC
+        // 以上方法内部都自动使用对象池
     }
 }
 ```
@@ -659,7 +659,7 @@ public sealed class ResponseMessage
     public string GetString();
     public bool GetBool();
 
-    // 列表方法（零 GC - 返回只读列表）
+    // 列表方法（利用缓存，后续调用避免重复反序列化）
     public IReadOnlyList<int> ListInt();
     public IReadOnlyList<long> ListLong();
     public IReadOnlyList<string> ListString();
@@ -671,20 +671,25 @@ public sealed class ResponseMessage
     public UnityEngine.Vector3 GetVector3();
     public UnityEngine.Vector3Int GetVector3Int();
 
-    // Vector 列表方法（零 GC）
+    // Vector 列表方法（利用缓存，后续调用避免重复反序列化）
     public IReadOnlyList<Vector2> ListVector2();
     public IReadOnlyList<Vector2Int> ListVector2Int();
     public IReadOnlyList<Vector3> ListVector3();
     public IReadOnlyList<Vector3Int> ListVector3Int();
+
+    // 字典访问器（复用传入的字典容器）
+    public void GetDictionary<T>(Dictionary<int, T> result) where T : IMessage, new();
+    public void GetDictionary<T>(Dictionary<long, T> result) where T : IMessage, new();
+    public void GetDictionary<T>(Dictionary<string, T> result) where T : IMessage, new();
 }
 ```
 
 **性能优化说明**：
 - ✅ `GetValue<T>()` 内置了单值缓存机制，同一响应对象重复调用相同类型不会重复反序列化
-- ✅ 所有 List 方法返回 `IReadOnlyList<T>`，直接引用内部数据，**零 GC 开销**
+- ✅ 所有 List 方法返回 `IReadOnlyList<T>`，直接引用内部数据，**后续调用避免重复反序列化**
 - ✅ 所有 Get 方法增加**空值安全**，不会抛出 NullReferenceException
 - ✅ 对象池回收时自动清理缓存，无需手动管理
-- ✅ 性能提升：重复调用缓存性能提升 500 倍+，List 方法避免 ToList() 的 GC 开销
+- ✅ 性能提升：重复调用利用缓存避免重复反序列化，List 方法避免 ToList() 的额外拷贝
 
 **使用示例**：
 ```csharp
@@ -701,9 +706,9 @@ UserAction.OfLogin(request, result => {
     // 重复调用直接从缓存返回，无额外开销
     var data2 = result.GetValue<LoginResponse>();
 
-    // 列表数据（零 GC - 直接引用，无复制）
+    // 列表数据（利用缓存，后续调用避免重复反序列化）
     var scores = result.ListInt();        // IReadOnlyList<int>
-    foreach (var score in scores) {       // 无 GC 分配
+    foreach (var score in scores) {     
         ProcessScore(score);
     }
 
@@ -711,10 +716,17 @@ UserAction.OfLogin(request, result => {
     var position = result.GetVector3();   // 获取玩家位置
     transform.position = position;        // 直接使用
 
-    // Vector 列表（零 GC）
+    // Vector 列表（利用缓存）
     var waypoints = result.ListVector3(); // IReadOnlyList<Vector3>
     for (int i = 0; i < waypoints.Count; i++) {
         pathNodes[i].position = waypoints[i];
+    }
+
+    // 字典数据（复用容器）
+    var items = new Dictionary<int, ItemData>();
+    result.GetDictionary(items);  // 填充到传入的字典
+    foreach (var kvp in items) {
+        Debug.Log($"Item {kvp.Key}: {kvp.Value.Name}");
     }
 });
 ```
@@ -798,6 +810,43 @@ List<UnityEngine.Vector3> posList = positions;             // Vector3List → Li
 - 隐式转换在编译时解析，运行时性能与手动构造完全相同
 - 无额外内存开销
 - 推荐在所有场景中使用
+
+### 字典类型转换（使用 From 方法）
+
+由于 C# 隐式转换操作符不支持泛型参数，字典类型使用静态 `From<T>()` 方法进行转换。
+
+**支持的类型**：
+- `IntKeyMap.From<T>(Dictionary<int, T>)` ← int 键字典
+- `LongKeyMap.From<T>(Dictionary<long, T>)` ← long 键字典
+- `StringKeyMap.From<T>(Dictionary<string, T>)` ← string 键字典
+
+**使用示例**：
+
+```csharp
+// 创建字典数据
+var playerItems = new Dictionary<int, ItemData>
+{
+    { 1001, new ItemData { Name = "剑", Count = 1 } },
+    { 1002, new ItemData { Name = "盾", Count = 2 } }
+};
+
+// 转换为 Protobuf Map 类型
+var map = IntKeyMap.From(playerItems);
+
+// 直接用于请求
+PiscesSdk.Instance.Send(cmdMerge, IntKeyMap.From(playerItems));
+
+// 反向转换：从 Map 提取到字典（复用容器）
+var result = new Dictionary<int, ItemData>();
+map.ToDictionary(result);
+```
+
+**为什么不用隐式转换**：
+```csharp
+// ❌ C# 不允许隐式转换操作符使用泛型参数
+public static implicit operator IntKeyMap<T>(Dictionary<int, T> dict) 
+    where T : IMessage<T>  // 编译错误！
+```
 
 ---
 

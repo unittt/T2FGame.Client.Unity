@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Pisces.Client.Protocol
+namespace Pisces.Protocol
 {
     /// <summary>
     /// 命令路由工具

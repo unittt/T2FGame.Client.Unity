@@ -1,6 +1,5 @@
 using System;
 using System.Buffers.Binary;
-using Pisces.Client.Protocol;
 using Pisces.Protocol;
 
 namespace Pisces.Client.Network

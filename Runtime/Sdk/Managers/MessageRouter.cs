@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
 using Google.Protobuf;
-using Pisces.Client.Protocol;
-using Pisces.Client.Utils;
 using Pisces.Protocol;
+using Pisces.Client.Utils;
 
 namespace Pisces.Client.Sdk
 {

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
-using System.Linq;
+using Google.Protobuf;
+
 
 namespace Pisces.Protocol
 {
@@ -148,7 +149,8 @@ namespace Pisces.Protocol
         /// </summary>
         public static implicit operator List<int>(IntValueList wrapper)
         {
-            return wrapper?.Values?.ToList() ?? new List<int>();
+            if (wrapper?.Values == null) return new List<int>();
+            return new List<int>(wrapper.Values);
         }
     }
 
@@ -184,7 +186,8 @@ namespace Pisces.Protocol
         /// </summary>
         public static implicit operator List<long>(LongValueList wrapper)
         {
-            return wrapper?.Values?.ToList() ?? new List<long>();
+            if (wrapper?.Values == null) return new List<long>();
+            return new List<long>(wrapper.Values);
         }
     }
 
@@ -220,7 +223,8 @@ namespace Pisces.Protocol
         /// </summary>
         public static implicit operator List<string>(StringValueList wrapper)
         {
-            return wrapper?.Values?.ToList() ?? new List<string>();
+            if (wrapper?.Values == null) return new List<string>();
+            return new List<string>(wrapper.Values);
         }
     }
 
@@ -256,7 +260,411 @@ namespace Pisces.Protocol
         /// </summary>
         public static implicit operator List<bool>(BoolValueList wrapper)
         {
-            return wrapper?.Values?.ToList() ?? new List<bool>();
+            if (wrapper?.Values == null) return new List<bool>();
+            return new List<bool>(wrapper.Values);
+        }
+    }
+
+    /// <summary>
+    /// ByteValueList 扩展，提供 List&lt;IMessage&gt; 与 ByteValueList 之间的转换
+    /// 用于存储序列化的 Protobuf 消息列表
+    /// </summary>
+    public partial class ByteValueList
+    {
+        /// <summary>
+        /// 从 List&lt;T&gt; 创建 ByteValueList，T 必须是 IMessage 类型
+        /// </summary>
+        /// <typeparam name="T">Protobuf 消息类型</typeparam>
+        /// <param name="messages">消息列表</param>
+        /// <returns>ByteValueList 实例</returns>
+        public static ByteValueList From<T>(List<T> messages) where T : IMessage<T>
+        {
+            var list = new ByteValueList();
+            if (messages != null)
+            {
+                foreach (var message in messages)
+                {
+                    if (message != null)
+                    {
+                        list.Values.Add(message.ToByteString());
+                    }
+                }
+            }
+            return list;
+        }
+
+        /// <summary>
+        /// 从 T[] 创建 ByteValueList，T 必须是 IMessage 类型
+        /// </summary>
+        /// <typeparam name="T">Protobuf 消息类型</typeparam>
+        /// <param name="messages">消息数组</param>
+        /// <returns>ByteValueList 实例</returns>
+        public static ByteValueList From<T>(T[] messages) where T : IMessage<T>
+        {
+            var list = new ByteValueList();
+            if (messages != null)
+            {
+                foreach (var message in messages)
+                {
+                    if (message != null)
+                    {
+                        list.Values.Add(message.ToByteString());
+                    }
+                }
+            }
+            return list;
+        }
+
+        /// <summary>
+        /// 转换为 List&lt;T&gt;（使用 ProtoSerializer）
+        /// </summary>
+        /// <typeparam name="T">Protobuf 消息类型</typeparam>
+        /// <returns>消息列表</returns>
+        /// <example>
+        /// List&lt;PlayerInfo&gt; players = byteList.ToList&lt;PlayerInfo&gt;();
+        /// </example>
+        public List<T> ToList<T>() where T : IMessage, new()
+        {
+            if (Values == null) return new List<T>();
+
+            var result = new List<T>(Values.Count);
+            for (var i = 0; i < Values.Count; i++)
+            {
+                try
+                {
+                    var message = ProtoSerializer.Deserialize<T>(Values[i]);
+                    if (message != null)
+                    {
+                        result.Add(message);
+                    }
+                }
+                catch (InvalidProtocolBufferException)
+                {
+                    // 解析失败时跳过该项
+                    continue;
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 转换为 List&lt;T&gt;（使用 MessageParser，性能更优）
+        /// </summary>
+        /// <typeparam name="T">Protobuf 消息类型</typeparam>
+        /// <param name="parser">消息解析器</param>
+        /// <returns>消息列表</returns>
+        /// <example>
+        /// List&lt;PlayerInfo&gt; players = byteList.ToList(PlayerInfo.Parser);
+        /// </example>
+        public List<T> ToList<T>(MessageParser<T> parser) where T : IMessage<T>
+        {
+            if (Values == null) return new List<T>();
+
+            var result = new List<T>(Values.Count);
+            for (var i = 0; i < Values.Count; i++)
+            {
+                try
+                {
+                    var message = ProtoSerializer.Deserialize(Values[i], parser);
+                    if (message != null)
+                    {
+                        result.Add(message);
+                    }
+                }
+                catch (InvalidProtocolBufferException)
+                {
+                    // 解析失败时跳过该项
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 添加一个 Protobuf 消息到列表
+        /// </summary>
+        /// <typeparam name="T">Protobuf 消息类型</typeparam>
+        /// <param name="message">要添加的消息</param>
+        public void Add<T>(T message) where T : IMessage<T>
+        {
+            if (message != null)
+            {
+                Values.Add(message.ToByteString());
+            }
+        }
+
+        /// <summary>
+        /// 添加多个 Protobuf 消息到列表
+        /// </summary>
+        /// <typeparam name="T">Protobuf 消息类型</typeparam>
+        /// <param name="messages">要添加的消息列表</param>
+        public void AddRange<T>(List<T> messages) where T : IMessage<T>
+        {
+            if (messages != null)
+            {
+                foreach (var message in messages)
+                {
+                    if (message != null)
+                    {
+                        Values.Add(message.ToByteString());
+                    }
+                }
+            }
+        }
+    }
+
+    #endregion
+
+    #region Map Extensions
+
+    /// <summary>
+    /// IntKeyMap 扩展，提供 Dictionary&lt;int, T&gt; 与 IntKeyMap 之间的转换
+    /// 用于存储以 int 为 key 的序列化 Protobuf 消息字典
+    /// </summary>
+    public partial class IntKeyMap
+    {
+        /// <summary>
+        /// 从 Dictionary&lt;int, T&gt; 创建 IntKeyMap
+        /// </summary>
+        public static IntKeyMap From<T>(Dictionary<int, T> dict) where T : IMessage<T>
+        {
+            var map = new IntKeyMap();
+            if (dict != null)
+            {
+                foreach (var kvp in dict)
+                {
+                    if (kvp.Value != null)
+                    {
+                        map.Entries.Add(new IntKeyEntry
+                        {
+                            Key = kvp.Key,
+                            Value = kvp.Value.ToByteString()
+                        });
+                    }
+                }
+            }
+            return map;
+        }
+
+        /// <summary>
+        /// 转换为 Dictionary&lt;int, T&gt;（使用 ProtoSerializer）
+        /// </summary>
+        public Dictionary<int, T> ToDictionary<T>() where T : IMessage, new()
+        {
+            if (Entries == null) return new Dictionary<int, T>();
+
+            var result = new Dictionary<int, T>(Entries.Count);
+            for (var i = 0; i < Entries.Count; i++)
+            {
+                try
+                {
+                    var entry = Entries[i];
+                    var message = ProtoSerializer.Deserialize<T>(entry.Value);
+                    if (message != null)
+                    {
+                        result[entry.Key] = message;
+                    }
+                }
+                catch (InvalidProtocolBufferException)
+                {
+                    continue;
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 转换为 Dictionary&lt;int, T&gt;（使用 MessageParser，性能更优）
+        /// </summary>
+        public Dictionary<int, T> ToDictionary<T>(MessageParser<T> parser) where T : IMessage<T>
+        {
+            if (Entries == null) return new Dictionary<int, T>();
+
+            var result = new Dictionary<int, T>(Entries.Count);
+            for (var i = 0; i < Entries.Count; i++)
+            {
+                try
+                {
+                    var entry = Entries[i];
+                    var message = ProtoSerializer.Deserialize(entry.Value, parser);
+                    if (message != null)
+                    {
+                        result[entry.Key] = message;
+                    }
+                }
+                catch (InvalidProtocolBufferException)
+                {
+                    continue;
+                }
+            }
+            return result;
+        }
+    }
+
+    /// <summary>
+    /// LongKeyMap 扩展，提供 Dictionary&lt;long, T&gt; 与 LongKeyMap 之间的转换
+    /// 用于存储以 long 为 key 的序列化 Protobuf 消息字典
+    /// </summary>
+    public partial class LongKeyMap
+    {
+        /// <summary>
+        /// 从 Dictionary&lt;long, T&gt; 创建 LongKeyMap
+        /// </summary>
+        public static LongKeyMap From<T>(Dictionary<long, T> dict) where T : IMessage<T>
+        {
+            var map = new LongKeyMap();
+            if (dict != null)
+            {
+                foreach (var kvp in dict)
+                {
+                    if (kvp.Value != null)
+                    {
+                        map.Entries.Add(new LongKeyEntry
+                        {
+                            Key = kvp.Key,
+                            Value = kvp.Value.ToByteString()
+                        });
+                    }
+                }
+            }
+            return map;
+        }
+
+        /// <summary>
+        /// 转换为 Dictionary&lt;long, T&gt;（使用 ProtoSerializer）
+        /// </summary>
+        public Dictionary<long, T> ToDictionary<T>() where T : IMessage, new()
+        {
+            if (Entries == null) return new Dictionary<long, T>();
+
+            var result = new Dictionary<long, T>(Entries.Count);
+            for (var i = 0; i < Entries.Count; i++)
+            {
+                try
+                {
+                    var entry = Entries[i];
+                    var message = ProtoSerializer.Deserialize<T>(entry.Value);
+                    if (message != null)
+                    {
+                        result[entry.Key] = message;
+                    }
+                }
+                catch (InvalidProtocolBufferException)
+                {
+                    continue;
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 转换为 Dictionary&lt;long, T&gt;（使用 MessageParser，性能更优）
+        /// </summary>
+        public Dictionary<long, T> ToDictionary<T>(MessageParser<T> parser) where T : IMessage<T>
+        {
+            if (Entries == null) return new Dictionary<long, T>();
+
+            var result = new Dictionary<long, T>(Entries.Count);
+            for (var i = 0; i < Entries.Count; i++)
+            {
+                try
+                {
+                    var entry = Entries[i];
+                    var message = ProtoSerializer.Deserialize(entry.Value, parser);
+                    if (message != null)
+                    {
+                        result[entry.Key] = message;
+                    }
+                }
+                catch (InvalidProtocolBufferException)
+                {
+                    continue;
+                }
+            }
+            return result;
+        }
+    }
+
+    /// <summary>
+    /// StringKeyMap 扩展，提供 Dictionary&lt;string, T&gt; 与 StringKeyMap 之间的转换
+    /// 用于存储以 string 为 key 的序列化 Protobuf 消息字典
+    /// </summary>
+    public partial class StringKeyMap
+    {
+        /// <summary>
+        /// 从 Dictionary&lt;string, T&gt; 创建 StringKeyMap
+        /// </summary>
+        public static StringKeyMap From<T>(Dictionary<string, T> dict) where T : IMessage<T>
+        {
+            var map = new StringKeyMap();
+            if (dict != null)
+            {
+                foreach (var kvp in dict)
+                {
+                    if (kvp.Value != null)
+                    {
+                        map.Entries.Add(new StringKeyEntry
+                        {
+                            Key = kvp.Key ?? string.Empty,
+                            Value = kvp.Value.ToByteString()
+                        });
+                    }
+                }
+            }
+            return map;
+        }
+
+        /// <summary>
+        /// 转换为 Dictionary&lt;string, T&gt;（使用 ProtoSerializer）
+        /// </summary>
+        public Dictionary<string, T> ToDictionary<T>() where T : IMessage, new()
+        {
+            if (Entries == null) return new Dictionary<string, T>();
+
+            var result = new Dictionary<string, T>(Entries.Count);
+            for (var i = 0; i < Entries.Count; i++)
+            {
+                try
+                {
+                    var entry = Entries[i];
+                    var message = ProtoSerializer.Deserialize<T>(entry.Value);
+                    if (message != null)
+                    {
+                        result[entry.Key] = message;
+                    }
+                }
+                catch (InvalidProtocolBufferException)
+                {
+                    continue;
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 转换为 Dictionary&lt;string, T&gt;（使用 MessageParser，性能更优）
+        /// </summary>
+        public Dictionary<string, T> ToDictionary<T>(MessageParser<T> parser) where T : IMessage<T>
+        {
+            if (Entries == null) return new Dictionary<string, T>();
+
+            var result = new Dictionary<string, T>(Entries.Count);
+            for (var i = 0; i < Entries.Count; i++)
+            {
+                try
+                {
+                    var entry = Entries[i];
+                    var message = ProtoSerializer.Deserialize(entry.Value, parser);
+                    if (message != null)
+                    {
+                        result[entry.Key] = message;
+                    }
+                }
+                catch (InvalidProtocolBufferException)
+                {
+                    continue;
+                }
+            }
+            return result;
         }
     }
 
@@ -405,8 +813,9 @@ namespace Pisces.Protocol
             if (wrapper?.Values == null) return new List<UnityEngine.Vector2>();
 
             var result = new List<UnityEngine.Vector2>(wrapper.Values.Count);
-            foreach (var v in wrapper.Values)
+            for (int i = 0; i < wrapper.Values.Count; i++)
             {
+                var v = wrapper.Values[i];
                 result.Add(new UnityEngine.Vector2(v.X, v.Y));
             }
             return result;
@@ -458,8 +867,9 @@ namespace Pisces.Protocol
             if (wrapper?.Values == null) return new List<UnityEngine.Vector2Int>();
 
             var result = new List<UnityEngine.Vector2Int>(wrapper.Values.Count);
-            foreach (var v in wrapper.Values)
+            for (int i = 0; i < wrapper.Values.Count; i++)
             {
+                var v = wrapper.Values[i];
                 result.Add(new UnityEngine.Vector2Int(v.X, v.Y));
             }
             return result;
@@ -511,8 +921,9 @@ namespace Pisces.Protocol
             if (wrapper?.Values == null) return new List<UnityEngine.Vector3>();
 
             var result = new List<UnityEngine.Vector3>(wrapper.Values.Count);
-            foreach (var v in wrapper.Values)
+            for (int i = 0; i < wrapper.Values.Count; i++)
             {
+                var v = wrapper.Values[i];
                 result.Add(new UnityEngine.Vector3(v.X, v.Y, v.Z));
             }
             return result;
@@ -564,8 +975,9 @@ namespace Pisces.Protocol
             if (wrapper?.Values == null) return new List<UnityEngine.Vector3Int>();
 
             var result = new List<UnityEngine.Vector3Int>(wrapper.Values.Count);
-            foreach (var v in wrapper.Values)
+            for (var i = 0; i < wrapper.Values.Count; i++)
             {
+                var v = wrapper.Values[i];
                 result.Add(new UnityEngine.Vector3Int(v.X, v.Y, v.Z));
             }
             return result;

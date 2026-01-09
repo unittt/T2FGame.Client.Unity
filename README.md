@@ -14,11 +14,11 @@
 
 ## 📖 项目简介
 
-Pisces Client SDK 是一个专为 Unity 游戏开发设计的**独立、轻量、高性能**的网络通信框架。基于 **Protobuf 协议**，提供完整的客户端网络功能。
+Pisces Client SDK 是一个专为 Unity 游戏开发设计的**轻量、高性能**的网络通信框架。基于 **Protobuf 协议**，提供完整的客户端网络功能。
 
 | 特性 | 说明 |
 |------|------|
-| 🎯 独立性 | 零业务依赖，可在任意 Unity 项目中使用 |
+| 🎯 解耦 | 与游戏业务无耦合，可集成到任意 Unity 项目 |
 | ⚡ 高性能 | 基于 UniTask 异步编程，对象池减少 GC |
 | 🌐 跨平台 | TCP、UDP、WebSocket，适配所有平台 |
 | 🛡️ 可靠性 | 自动重连、心跳保活、完善错误处理 |
@@ -37,9 +37,9 @@ https://github.com/PiscesGameDev/Pisces.Client.Unity.git
 
 | 依赖 | 版本 | 说明 |
 |------|------|------|
-| **UniTask** | 2.3.3+ | 异步编程框架（必需） |
-| **Protobuf** | 3.x | 消息序列化（必需） |
-| **UnityWebSocket** | latest | WebGL 平台必需 |
+| [**UniTask**](https://github.com/Cysharp/UniTask) | 2.3.3+ | 异步编程框架（必需） |
+| [**Protobuf**](https://github.com/protocolbuffers/protobuf) | 3.x | 消息序列化（必需） |
+| [**UnityWebSocket**](https://github.com/psygames/UnityWebSocket) | latest | WebGL 平台必需 |
 
 ---
 

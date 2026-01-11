@@ -371,43 +371,36 @@ namespace Pisces.Client.Sdk
         /// <summary>
         /// 订阅指定 cmdMerge 的服务器推送消息
         /// </summary>
-        public void Subscribe(int cmdMerge, Action<ExternalMessage> callback)
+        /// <returns>用于取消订阅的 IDisposable</returns>
+        public IDisposable Subscribe(int cmdMerge, Action<ExternalMessage> callback)
         {
             EnsureInitialized();
-            _messageRouter.Subscribe(cmdMerge, callback);
+            return _messageRouter.Subscribe(cmdMerge, callback);
         }
 
         /// <summary>
         /// 订阅指定 cmdMerge 的服务器推送消息（泛型版本，自动解包）
         /// </summary>
-        public void Subscribe<TMessage>(int cmdMerge, Action<TMessage> callback)
+        /// <returns>用于取消订阅的 IDisposable</returns>
+        public IDisposable Subscribe<TMessage>(int cmdMerge, Action<TMessage> callback)
             where TMessage : IMessage, new()
         {
             EnsureInitialized();
-            _messageRouter.Subscribe(cmdMerge, callback);
+            return _messageRouter.Subscribe(cmdMerge, callback);
         }
 
         /// <summary>
-        /// 取消订阅指定 cmdMerge 的消息
+        /// 订阅指定 cmdMerge 的服务器推送消息（使用 MessageParser，性能更优）
         /// </summary>
-        public void Unsubscribe(int cmdMerge, Action<ExternalMessage> callback)
+        /// <param name="cmdMerge">命令路由标识</param>
+        /// <param name="callback">消息处理回调</param>
+        /// <param name="parser">消息解析器，通常使用 YourMessage.Parser</param>
+        /// <returns>用于取消订阅的 IDisposable</returns>
+        public IDisposable Subscribe<TMessage>(int cmdMerge, Action<TMessage> callback, MessageParser<TMessage> parser)
+            where TMessage : IMessage<TMessage>
         {
-            if (!IsInitialized)
-                return;
-
-            _messageRouter.Unsubscribe(cmdMerge, callback);
-        }
-
-        /// <summary>
-        /// 取消订阅指定 cmdMerge 的消息（泛型版本）
-        /// </summary>
-        public void Unsubscribe<TMessage>(int cmdMerge, Action<TMessage> callback)
-            where TMessage : IMessage, new()
-        {
-            if (!IsInitialized)
-                return;
-
-            _messageRouter.Unsubscribe(cmdMerge, callback);
+            EnsureInitialized();
+            return _messageRouter.Subscribe(cmdMerge, callback, parser);
         }
 
         /// <summary>

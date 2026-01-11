@@ -19,25 +19,18 @@ namespace Pisces.Client.Sdk
         /// </summary>
         private readonly Dictionary<int, Action<ExternalMessage>> _routes = new();
 
-        /// <summary>
-        /// 泛型 handler 到包装后 handler 的映射表
-        /// Key: 原始泛型 handler 的 hashcode + cmdMerge 组合
-        /// Value: 包装后的 Action&lt;ExternalMessage&gt;
-        /// </summary>
-        private readonly Dictionary<
-            (int cmdMerge, Delegate handler),
-            Action<ExternalMessage>
-        > _handlerWrappers = new();
+        #region Subscribe - 返回 IDisposable
 
         /// <summary>
         /// 订阅指定 cmdMerge 的消息
         /// </summary>
         /// <param name="cmdMerge">命令路由标识</param>
         /// <param name="handler">消息处理回调</param>
-        public void Subscribe(int cmdMerge, Action<ExternalMessage> handler)
+        /// <returns>用于取消订阅的 IDisposable</returns>
+        public IDisposable Subscribe(int cmdMerge, Action<ExternalMessage> handler)
         {
             if (handler == null)
-                return;
+                return Subscription.Empty;
 
             if (_routes.TryGetValue(cmdMerge, out var existing))
             {
@@ -49,6 +42,8 @@ namespace Pisces.Client.Sdk
             }
 
             GameLogger.Log($"[MessageRouter] 已订阅 cmdMerge: {cmdMerge}");
+
+            return new Subscription(this, cmdMerge, handler);
         }
 
         /// <summary>
@@ -57,11 +52,12 @@ namespace Pisces.Client.Sdk
         /// <typeparam name="TMessage">消息类型</typeparam>
         /// <param name="cmdMerge">命令路由标识</param>
         /// <param name="handler">消息处理回调</param>
-        public void Subscribe<TMessage>(int cmdMerge, Action<TMessage> handler)
+        /// <returns>用于取消订阅的 IDisposable</returns>
+        public IDisposable Subscribe<TMessage>(int cmdMerge, Action<TMessage> handler)
             where TMessage : IMessage, new()
         {
             if (handler == null)
-                return;
+                return Subscription.Empty;
 
             // 创建包装器
             Action<ExternalMessage> wrapper = message =>
@@ -77,18 +73,50 @@ namespace Pisces.Client.Sdk
                 }
             };
 
-            // 保存映射关系，用于后续取消订阅
-            _handlerWrappers[(cmdMerge, handler)] = wrapper;
-
-            Subscribe(cmdMerge, wrapper);
+            return Subscribe(cmdMerge, wrapper);
         }
 
         /// <summary>
-        /// 取消订阅指定 cmdMerge 的消息
+        /// 订阅指定 cmdMerge 的消息（使用 MessageParser，性能更优）
+        /// </summary>
+        /// <typeparam name="TMessage">消息类型</typeparam>
+        /// <param name="cmdMerge">命令路由标识</param>
+        /// <param name="handler">消息处理回调</param>
+        /// <param name="parser">消息解析器，通常使用 YourMessage.Parser</param>
+        /// <returns>用于取消订阅的 IDisposable</returns>
+        public IDisposable Subscribe<TMessage>(int cmdMerge, Action<TMessage> handler, MessageParser<TMessage> parser)
+            where TMessage : IMessage<TMessage>
+        {
+            if (handler == null || parser == null)
+                return Subscription.Empty;
+
+            // 创建包装器，使用 MessageParser 解析
+            Action<ExternalMessage> wrapper = message =>
+            {
+                try
+                {
+                    var typedMessage = ProtoSerializer.Deserialize(message.Data, parser);
+                    handler.Invoke(typedMessage);
+                }
+                catch (Exception ex)
+                {
+                    GameLogger.LogError($"[MessageRouter] 解包消息失败: {ex.Message}");
+                }
+            };
+
+            return Subscribe(cmdMerge, wrapper);
+        }
+
+        #endregion
+
+        #region Unsubscribe - 内部使用
+
+        /// <summary>
+        /// 取消订阅指定 cmdMerge 的消息（内部使用，由 Subscription.Dispose 调用）
         /// </summary>
         /// <param name="cmdMerge">命令路由标识</param>
         /// <param name="handler">消息处理回调</param>
-        public void Unsubscribe(int cmdMerge, Action<ExternalMessage> handler)
+        internal void Unsubscribe(int cmdMerge, Action<ExternalMessage> handler)
         {
             if (handler == null)
                 return;
@@ -109,31 +137,9 @@ namespace Pisces.Client.Sdk
             GameLogger.Log($"[MessageRouter] 已取消订阅 cmdMerge: {cmdMerge}");
         }
 
-        /// <summary>
-        /// 取消订阅指定 cmdMerge 的消息（泛型版本）
-        /// </summary>
-        /// <typeparam name="TMessage">消息类型</typeparam>
-        /// <param name="cmdMerge">命令路由标识</param>
-        /// <param name="handler">消息处理回调</param>
-        public void Unsubscribe<TMessage>(int cmdMerge, Action<TMessage> handler)
-            where TMessage : IMessage, new()
-        {
-            if (handler == null)
-                return;
+        #endregion
 
-            var key = (cmdMerge, (Delegate)handler);
-            if (!_handlerWrappers.TryGetValue(key, out var wrapper))
-            {
-                GameLogger.LogWarning($"[MessageRouter] 未找到对应的订阅 cmdMerge: {cmdMerge}");
-                return;
-            }
-
-            // 取消订阅包装器
-            Unsubscribe(cmdMerge, wrapper);
-
-            // 移除映射关系
-            _handlerWrappers.Remove(key);
-        }
+        #region Dispatch
 
         /// <summary>
         /// 分发消息到订阅者
@@ -160,6 +166,10 @@ namespace Pisces.Client.Sdk
             }
         }
 
+        #endregion
+
+        #region Clear
+
         /// <summary>
         /// 清除指定 cmdMerge 的所有订阅
         /// </summary>
@@ -167,21 +177,6 @@ namespace Pisces.Client.Sdk
         public void Clear(int cmdMerge)
         {
             _routes.Remove(cmdMerge);
-
-            // 清除该 cmdMerge 相关的包装器映射
-            var keysToRemove = new List<(int, Delegate)>();
-            foreach (var key in _handlerWrappers.Keys)
-            {
-                if (key.cmdMerge == cmdMerge)
-                {
-                    keysToRemove.Add(key);
-                }
-            }
-            foreach (var key in keysToRemove)
-            {
-                _handlerWrappers.Remove(key);
-            }
-
             GameLogger.Log($"[MessageRouter] 已清除 cmdMerge 的所有订阅: {cmdMerge}");
         }
 
@@ -191,9 +186,12 @@ namespace Pisces.Client.Sdk
         public void ClearAll()
         {
             _routes.Clear();
-            _handlerWrappers.Clear();
             GameLogger.Log("[MessageRouter] 已清除所有订阅");
         }
+
+        #endregion
+
+        #region Query
 
         /// <summary>
         /// 获取指定 cmdMerge 的订阅数量
@@ -213,5 +211,55 @@ namespace Pisces.Client.Sdk
         {
             return _routes.TryGetValue(cmdMerge, out var handler) && handler != null;
         }
+
+        #endregion
+
+        #region Subscription
+
+        /// <summary>
+        /// 订阅凭证，用于取消订阅
+        /// </summary>
+        private sealed class Subscription : IDisposable
+        {
+            /// <summary>
+            /// 空订阅（用于无效参数情况）
+            /// </summary>
+            public static readonly IDisposable Empty = new EmptySubscription();
+
+            private MessageRouter _router;
+            private readonly int _cmdMerge;
+            private Action<ExternalMessage> _handler;
+            private bool _disposed;
+
+            public Subscription(MessageRouter router, int cmdMerge, Action<ExternalMessage> handler)
+            {
+                _router = router;
+                _cmdMerge = cmdMerge;
+                _handler = handler;
+            }
+
+            public void Dispose()
+            {
+                if (_disposed)
+                    return;
+
+                _disposed = true;
+                _router?.Unsubscribe(_cmdMerge, _handler);
+
+                // 清理引用，帮助 GC
+                _router = null;
+                _handler = null;
+            }
+        }
+
+        /// <summary>
+        /// 空订阅实现
+        /// </summary>
+        private sealed class EmptySubscription : IDisposable
+        {
+            public void Dispose() { }
+        }
+
+        #endregion
     }
 }

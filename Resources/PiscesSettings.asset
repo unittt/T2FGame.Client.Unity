@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37c4f899b0467794d848fcb7d14b9be7, type: 3}
+  m_Name: PiscesSettings
+  m_EditorClassIdentifier: 
+  _serverEnvironments:
+  - Name: Development
+    Host: localhost
+    Port: 9090
+    Description: "\u672C\u5730\u5F00\u53D1\u73AF\u5883"
+  - Name: Staging
+    Host: staging.example.com
+    Port: 9090
+    Description: "\u6D4B\u8BD5\u73AF\u5883"
+  - Name: Production
+    Host: prod.example.com
+    Port: 9090
+    Description: "\u751F\u4EA7\u73AF\u5883"
+  _activeEnvironmentIndex: 0
+  _channelType: 0
+  _connectTimeoutMs: 10000
+  _requestTimeoutMs: 30000
+  _heartbeatIntervalSec: 30
+  _heartbeatTimeoutCount: 3
+  _autoReconnect: 1
+  _reconnectIntervalSec: 3
+  _maxReconnectCount: 5
+  _receiveBufferSize: 65536
+  _sendBufferSize: 65536
+  _enableLog: 1
+  _useWorkerThread: 1

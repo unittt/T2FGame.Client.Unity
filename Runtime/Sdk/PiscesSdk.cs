@@ -3,6 +3,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using Google.Protobuf;
 using Pisces.Client.Network;
+using Pisces.Client.Settings;
 using Pisces.Client.Utils;
 using Pisces.Protocol;
 
@@ -110,10 +111,31 @@ namespace Pisces.Client.Sdk
         #region 初始化和连接
 
         /// <summary>
+        /// 初始化 SDK（从 Project Settings 加载配置）
+        /// </summary>
+        public void Initialize()
+        {
+            var settings = PiscesSettings.Instance;
+            GameClientOptions options = null;
+
+            if (settings != null)
+            {
+                options = settings.ToGameClientOptions();
+                GameLogger.Log($"[PiscesSdk] 从 Project Settings 加载配置: {settings.ActiveEnvironment.Name} ({settings.ActiveEnvironment.Host}:{settings.ActiveEnvironment.Port})");
+            }
+            else
+            {
+                GameLogger.LogWarning("[PiscesSdk] 未找到 PiscesSettings，使用默认配置");
+            }
+
+            Initialize(options);
+        }
+
+        /// <summary>
         /// 初始化 SDK
         /// </summary>
-        /// <param name="options">客户端配置</param>
-        public void Initialize(GameClientOptions options = null)
+        /// <param name="options">客户端配置（传入 null 时使用默认配置）</param>
+        public void Initialize(GameClientOptions options)
         {
             if (_disposed)
                 throw new ObjectDisposedException(nameof(PiscesSdk));

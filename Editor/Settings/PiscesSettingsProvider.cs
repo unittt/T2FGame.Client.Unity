@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.IO;
-using Pisces.Client.Network.Channel;
 using Pisces.Client.Settings;
 using UnityEditor;
 using UnityEngine;
@@ -15,7 +14,7 @@ namespace Pisces.Client.Editor.Settings
     public class PiscesSettingsProvider : SettingsProvider
     {
         private const string SettingsPath = "Project/Pisces Client";
-        private const string SettingsAssetPath = "Assets/Pisces.Client.Unity/Resources/PiscesSettings.asset";
+        private const string SettingsAssetPath = "Assets/Resources/PiscesSettings.asset";
 
         private SerializedObject _serializedSettings;
         private PiscesSettings _settings;

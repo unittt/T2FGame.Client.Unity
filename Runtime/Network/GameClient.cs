@@ -17,6 +17,7 @@ namespace Pisces.Client.Network
     public class GameClient : IGameClient
     {
         private readonly GameClientOptions _options;
+        private readonly NetworkStatistics _statistics;
         private IProtocolChannel _channel;
         private PacketBuffer _receiveBuffer;
 
@@ -57,6 +58,11 @@ namespace Pisces.Client.Network
 
         public GameClientOptions Options => _options;
 
+        /// <summary>
+        /// 网络统计数据
+        /// </summary>
+        public NetworkStatistics Statistics => _statistics;
+
         public event Action<ConnectionState> OnStateChanged;
         public event Action<ExternalMessage> OnMessageReceived;
         public event Action<Exception> OnError;
@@ -70,8 +76,14 @@ namespace Pisces.Client.Network
         public GameClient(GameClientOptions options = null)
         {
             _options = options?.Clone() ?? new GameClientOptions();
+            _statistics = new NetworkStatistics();
             _receiveBuffer = new PacketBuffer(_options.ReceiveBufferSize);
             GameLogger.Enabled = _options.EnableLog;
+        }
+
+        public void Connect()
+        {
+            ConnectAsync().Forget();
         }
 
         public async UniTask ConnectAsync()
@@ -119,6 +131,8 @@ namespace Pisces.Client.Network
 
                 State = ConnectionState.Connected;
                 _reconnectCount = 0;
+                _statistics.RecordConnected();
+                _statistics.ResetReconnectCount();
 
                 // 启动心跳
                 StartHeartbeat();
@@ -143,6 +157,11 @@ namespace Pisces.Client.Network
             }
         }
 
+        public void Disconnect()
+        {
+            DisconnectAsync().Forget();
+        }
+
         public async UniTask DisconnectAsync()
         {
             if (_disposed)
@@ -159,6 +178,7 @@ namespace Pisces.Client.Network
             }
 
             State = ConnectionState.Disconnected;
+            _statistics.RecordDisconnected();
             ClearPendingRequests(new OperationCanceledException("Disconnected"));
 
             await UniTask.CompletedTask;
@@ -181,6 +201,7 @@ namespace Pisces.Client.Network
             }
 
             State = ConnectionState.Closed;
+            _statistics.RecordDisconnected();
             ClearPendingRequests(new OperationCanceledException("客户端已关闭"));
 
             GameLogger.Log("[GameClient] 已关闭");
@@ -249,8 +270,12 @@ namespace Pisces.Client.Network
             try
             {
                 // 发送请求
-                var packet = PacketCodec.Encode(CreateExternalMessage(command));
+                var message = CreateExternalMessage(command);
+                var packet = PacketCodec.Encode(message);
                 _channel.Send(packet);
+
+                // 记录统计
+                _statistics.RecordSend(packet.Length, command.CmdMerge, command.MsgId);
 
                 // 等待响应（带超时）
                 using var timeoutCts = new CancellationTokenSource(_options.RequestTimeoutMs);
@@ -287,8 +312,19 @@ namespace Pisces.Client.Network
 
             try
             {
-                var packet = PacketCodec.Encode(CreateExternalMessage(command));
+                var message = CreateExternalMessage(command);
+                var packet = PacketCodec.Encode(message);
                 _channel.Send(packet);
+
+                // 记录统计 (心跳消息特殊处理)
+                if (command.MessageType == MessageType.Heartbeat)
+                {
+                    _statistics.RecordHeartbeatSend();
+                }
+                else
+                {
+                    _statistics.RecordSend(packet.Length, command.CmdMerge, command.MsgId);
+                }
             }
             finally
             {
@@ -340,6 +376,7 @@ namespace Pisces.Client.Network
             {
                 // 心跳响应，重置超时计数
                 _heartbeatTimeoutCount = 0;
+                _statistics.RecordHeartbeatReceive();
                 GameLogger.Log("[GameClient] 收到心跳响应");
                 return;
             }
@@ -381,6 +418,12 @@ namespace Pisces.Client.Network
                 return;
             }
 
+            // 记录接收统计
+            int dataSize = message.Data?.Length ?? 0;
+            bool isSuccess = message.ResponseStatus == 0;
+            string errorInfo = isSuccess ? null : $"Status: {message.ResponseStatus}";
+            _statistics.RecordReceive(dataSize, message.CmdMerge, message.MsgId, null, isSuccess, errorInfo);
+
             // 创建响应消息
             var response = ReferencePool<ResponseMessage>.Spawn();
             response.Initialize(message);
@@ -410,6 +453,7 @@ namespace Pisces.Client.Network
 
             GameLogger.LogWarning("[GameClient] 连接已断开");
             State = ConnectionState.Disconnected;
+            _statistics.RecordDisconnected();
 
             ClearPendingRequests(new OperationCanceledException("连接断开"));
 
@@ -546,6 +590,7 @@ namespace Pisces.Client.Network
                 }
 
                 _reconnectCount++;
+                _statistics.RecordReconnect();
                 GameLogger.Log($"[GameClient] 正在重连... (第 {_reconnectCount} 次尝试)");
 
                 try

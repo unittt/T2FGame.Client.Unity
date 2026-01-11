@@ -83,7 +83,7 @@ Pisces Client SDK 是一个专为 Unity 游戏开发设计的**轻量、高性�
 ### Git URL（推荐）
 
 ```
-https://github.com/user/Pisces.Client.Unity.git
+https://github.com/PiscesGameDev/Pisces.Client.Unity.git
 ```
 
 ### 依赖项

@@ -29,15 +29,12 @@ namespace Pisces.Client.Sdk
         /// </summary>
         public ByteString Data { get; private set; }
 
-        private void Initialize(
-            int cmdMerge,
-            ByteString data,
-            MessageType messageType = MessageType.Business
-        )
+        private void Initialize(int cmdMerge, ByteString data, MessageType messageType = MessageType.Business)
         {
             CmdMerge = cmdMerge;
             Data = data ?? _emptyByteString;
             MessageType = messageType;
+            // 生成消息编号 (只有业务类型 才会有消息编号)
             MsgId = messageType == MessageType.Business ? MsgIdManager.GenerateNextMsgId() : 0;
         }
 

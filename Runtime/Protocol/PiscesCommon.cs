@@ -32,49 +32,50 @@ namespace Pisces.Protocol {
             "aXNjZXMucHJvdG9jb2wuTWVzc2FnZVR5cGUSFwoPcHJvdG9jb2xfc3dpdGNo",
             "GAIgASgFEhEKCWNtZF9tZXJnZRgDIAEoBRIXCg9yZXNwb25zZV9zdGF0dXMY",
             "BCABKAUSEQoJdmFsaWRfbXNnGAUgASgJEgwKBGRhdGEYBiABKAwSDgoGbXNn",
-            "X2lkGAcgASgFIiUKEEhlYXJ0YmVhdE1lc3NhZ2USEQoJdGltZXN0YW1wGAEg",
-            "ASgDIhkKCEludFZhbHVlEg0KBXZhbHVlGAEgASgFIhoKCUxvbmdWYWx1ZRIN",
-            "CgV2YWx1ZRgBIAEoAyIcCgtTdHJpbmdWYWx1ZRINCgV2YWx1ZRgBIAEoCSIa",
-            "CglCb29sVmFsdWUSDQoFdmFsdWUYASABKAgiHgoMSW50VmFsdWVMaXN0Eg4K",
-            "BnZhbHVlcxgBIAMoBSIfCg1Mb25nVmFsdWVMaXN0Eg4KBnZhbHVlcxgBIAMo",
-            "AyIhCg9TdHJpbmdWYWx1ZUxpc3QSDgoGdmFsdWVzGAEgAygJIh8KDUJvb2xW",
-            "YWx1ZUxpc3QSDgoGdmFsdWVzGAEgAygIIh8KDUJ5dGVWYWx1ZUxpc3QSDgoG",
-            "dmFsdWVzGAEgAygMIh8KB1ZlY3RvcjISCQoBeBgBIAEoAhIJCgF5GAIgASgC",
-            "IiIKClZlY3RvcjJJbnQSCQoBeBgBIAEoBRIJCgF5GAIgASgFIioKB1ZlY3Rv",
-            "cjMSCQoBeBgBIAEoAhIJCgF5GAIgASgCEgkKAXoYAyABKAIiLQoKVmVjdG9y",
-            "M0ludBIJCgF4GAEgASgFEgkKAXkYAiABKAUSCQoBehgDIAEoBSI3CgtWZWN0",
-            "b3IyTGlzdBIoCgZ2YWx1ZXMYASADKAsyGC5waXNjZXMucHJvdG9jb2wuVmVj",
-            "dG9yMiI9Cg5WZWN0b3IySW50TGlzdBIrCgZ2YWx1ZXMYASADKAsyGy5waXNj",
-            "ZXMucHJvdG9jb2wuVmVjdG9yMkludCI3CgtWZWN0b3IzTGlzdBIoCgZ2YWx1",
-            "ZXMYASADKAsyGC5waXNjZXMucHJvdG9jb2wuVmVjdG9yMyI9Cg5WZWN0b3Iz",
-            "SW50TGlzdBIrCgZ2YWx1ZXMYASADKAsyGy5waXNjZXMucHJvdG9jb2wuVmVj",
-            "dG9yM0ludCIsCg5CeXRlVmFsdWVFbnRyeRILCgNrZXkYASABKAwSDQoFdmFs",
-            "dWUYAiABKAwiQAoMQnl0ZVZhbHVlTWFwEjAKB2VudHJpZXMYASADKAsyHy5w",
-            "aXNjZXMucHJvdG9jb2wuQnl0ZVZhbHVlRW50cnkiKQoLSW50S2V5RW50cnkS",
-            "CwoDa2V5GAEgASgFEg0KBXZhbHVlGAIgASgMIjoKCUludEtleU1hcBItCgdl",
-            "bnRyaWVzGAEgAygLMhwucGlzY2VzLnByb3RvY29sLkludEtleUVudHJ5IioK",
-            "DExvbmdLZXlFbnRyeRILCgNrZXkYASABKAMSDQoFdmFsdWUYAiABKAwiPAoK",
-            "TG9uZ0tleU1hcBIuCgdlbnRyaWVzGAEgAygLMh0ucGlzY2VzLnByb3RvY29s",
-            "LkxvbmdLZXlFbnRyeSIsCg5TdHJpbmdLZXlFbnRyeRILCgNrZXkYASABKAkS",
-            "DQoFdmFsdWUYAiABKAwiQAoMU3RyaW5nS2V5TWFwEjAKB2VudHJpZXMYASAD",
-            "KAsyHy5waXNjZXMucHJvdG9jb2wuU3RyaW5nS2V5RW50cnkqYQoLTWVzc2Fn",
-            "ZVR5cGUSGgoWTUVTU0FHRV9UWVBFX0hFQVJUQkVBVBAAEhkKFU1FU1NBR0Vf",
-            "VFlQRV9CVVNJTkVTUxABEhsKF01FU1NBR0VfVFlQRV9ESVNDT05ORUNUEAIq",
-            "3gIKEERpc2Nvbm5lY3RSZWFzb24SHQoZRElTQ09OTkVDVF9SRUFTT05fVU5L",
-            "Tk9XThAAEiIKHkRJU0NPTk5FQ1RfUkVBU09OX0NMSUVOVF9DTE9TRRABEiIK",
-            "HkRJU0NPTk5FQ1RfUkVBU09OX1NFUlZFUl9DTE9TRRACEiIKHkRJU0NPTk5F",
-            "Q1RfUkVBU09OX0lETEVfVElNRU9VVBADEiUKIURJU0NPTk5FQ1RfUkVBU09O",
-            "X0RVUExJQ0FURV9MT0dJThAEEigKJERJU0NPTk5FQ1RfUkVBU09OX1NFUlZF",
-            "Ul9NQUlOVEVOQU5DRRAFEhwKGERJU0NPTk5FQ1RfUkVBU09OX0JBTk5FRBAG",
-            "EiMKH0RJU0NPTk5FQ1RfUkVBU09OX05FVFdPUktfRVJST1IQBxIrCidESVND",
-            "T05ORUNUX1JFQVNPTl9BVVRIRU5USUNBVElPTl9GQUlMRUQQCEISqgIPUGlz",
-            "Y2VzLlByb3RvY29sYgZwcm90bzM="));
+            "X2lkGAcgASgFIjsKD1RpbWVTeW5jTWVzc2FnZRITCgtjbGllbnRfdGltZRgB",
+            "IAEoAxITCgtzZXJ2ZXJfdGltZRgCIAEoAyIZCghJbnRWYWx1ZRINCgV2YWx1",
+            "ZRgBIAEoBSIaCglMb25nVmFsdWUSDQoFdmFsdWUYASABKAMiHAoLU3RyaW5n",
+            "VmFsdWUSDQoFdmFsdWUYASABKAkiGgoJQm9vbFZhbHVlEg0KBXZhbHVlGAEg",
+            "ASgIIh4KDEludFZhbHVlTGlzdBIOCgZ2YWx1ZXMYASADKAUiHwoNTG9uZ1Zh",
+            "bHVlTGlzdBIOCgZ2YWx1ZXMYASADKAMiIQoPU3RyaW5nVmFsdWVMaXN0Eg4K",
+            "BnZhbHVlcxgBIAMoCSIfCg1Cb29sVmFsdWVMaXN0Eg4KBnZhbHVlcxgBIAMo",
+            "CCIfCg1CeXRlVmFsdWVMaXN0Eg4KBnZhbHVlcxgBIAMoDCIfCgdWZWN0b3Iy",
+            "EgkKAXgYASABKAISCQoBeRgCIAEoAiIiCgpWZWN0b3IySW50EgkKAXgYASAB",
+            "KAUSCQoBeRgCIAEoBSIqCgdWZWN0b3IzEgkKAXgYASABKAISCQoBeRgCIAEo",
+            "AhIJCgF6GAMgASgCIi0KClZlY3RvcjNJbnQSCQoBeBgBIAEoBRIJCgF5GAIg",
+            "ASgFEgkKAXoYAyABKAUiNwoLVmVjdG9yMkxpc3QSKAoGdmFsdWVzGAEgAygL",
+            "MhgucGlzY2VzLnByb3RvY29sLlZlY3RvcjIiPQoOVmVjdG9yMkludExpc3QS",
+            "KwoGdmFsdWVzGAEgAygLMhsucGlzY2VzLnByb3RvY29sLlZlY3RvcjJJbnQi",
+            "NwoLVmVjdG9yM0xpc3QSKAoGdmFsdWVzGAEgAygLMhgucGlzY2VzLnByb3Rv",
+            "Y29sLlZlY3RvcjMiPQoOVmVjdG9yM0ludExpc3QSKwoGdmFsdWVzGAEgAygL",
+            "MhsucGlzY2VzLnByb3RvY29sLlZlY3RvcjNJbnQiLAoOQnl0ZVZhbHVlRW50",
+            "cnkSCwoDa2V5GAEgASgMEg0KBXZhbHVlGAIgASgMIkAKDEJ5dGVWYWx1ZU1h",
+            "cBIwCgdlbnRyaWVzGAEgAygLMh8ucGlzY2VzLnByb3RvY29sLkJ5dGVWYWx1",
+            "ZUVudHJ5IikKC0ludEtleUVudHJ5EgsKA2tleRgBIAEoBRINCgV2YWx1ZRgC",
+            "IAEoDCI6CglJbnRLZXlNYXASLQoHZW50cmllcxgBIAMoCzIcLnBpc2Nlcy5w",
+            "cm90b2NvbC5JbnRLZXlFbnRyeSIqCgxMb25nS2V5RW50cnkSCwoDa2V5GAEg",
+            "ASgDEg0KBXZhbHVlGAIgASgMIjwKCkxvbmdLZXlNYXASLgoHZW50cmllcxgB",
+            "IAMoCzIdLnBpc2Nlcy5wcm90b2NvbC5Mb25nS2V5RW50cnkiLAoOU3RyaW5n",
+            "S2V5RW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgMIkAKDFN0cmlu",
+            "Z0tleU1hcBIwCgdlbnRyaWVzGAEgAygLMh8ucGlzY2VzLnByb3RvY29sLlN0",
+            "cmluZ0tleUVudHJ5Kn0KC01lc3NhZ2VUeXBlEhoKFk1FU1NBR0VfVFlQRV9I",
+            "RUFSVEJFQVQQABIZChVNRVNTQUdFX1RZUEVfQlVTSU5FU1MQARIaChZNRVNT",
+            "QUdFX1RZUEVfVElNRV9TWU5DEAISGwoXTUVTU0FHRV9UWVBFX0RJU0NPTk5F",
+            "Q1QQAyreAgoQRGlzY29ubmVjdFJlYXNvbhIdChlESVNDT05ORUNUX1JFQVNP",
+            "Tl9VTktOT1dOEAASIgoeRElTQ09OTkVDVF9SRUFTT05fQ0xJRU5UX0NMT1NF",
+            "EAESIgoeRElTQ09OTkVDVF9SRUFTT05fU0VSVkVSX0NMT1NFEAISIgoeRElT",
+            "Q09OTkVDVF9SRUFTT05fSURMRV9USU1FT1VUEAMSJQohRElTQ09OTkVDVF9S",
+            "RUFTT05fRFVQTElDQVRFX0xPR0lOEAQSKAokRElTQ09OTkVDVF9SRUFTT05f",
+            "U0VSVkVSX01BSU5URU5BTkNFEAUSHAoYRElTQ09OTkVDVF9SRUFTT05fQkFO",
+            "TkVEEAYSIwofRElTQ09OTkVDVF9SRUFTT05fTkVUV09SS19FUlJPUhAHEisK",
+            "J0RJU0NPTk5FQ1RfUkVBU09OX0FVVEhFTlRJQ0FUSU9OX0ZBSUxFRBAIQhKq",
+            "Ag9QaXNjZXMuUHJvdG9jb2xiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Pisces.Protocol.MessageType), typeof(global::Pisces.Protocol.DisconnectReason), }, null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Pisces.Protocol.DisconnectNotify), global::Pisces.Protocol.DisconnectNotify.Parser, new[]{ "Reason", "Message", "EstimatedRecoveryTime", "Timestamp" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Pisces.Protocol.ExternalMessage), global::Pisces.Protocol.ExternalMessage.Parser, new[]{ "MessageType", "ProtocolSwitch", "CmdMerge", "ResponseStatus", "ValidMsg", "Data", "MsgId" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Pisces.Protocol.HeartbeatMessage), global::Pisces.Protocol.HeartbeatMessage.Parser, new[]{ "Timestamp" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Pisces.Protocol.TimeSyncMessage), global::Pisces.Protocol.TimeSyncMessage.Parser, new[]{ "ClientTime", "ServerTime" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Pisces.Protocol.IntValue), global::Pisces.Protocol.IntValue.Parser, new[]{ "Value" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Pisces.Protocol.LongValue), global::Pisces.Protocol.LongValue.Parser, new[]{ "Value" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Pisces.Protocol.StringValue), global::Pisces.Protocol.StringValue.Parser, new[]{ "Value" }, null, null, null, null),
@@ -109,7 +110,8 @@ namespace Pisces.Protocol {
   public enum MessageType {
     [pbr::OriginalName("MESSAGE_TYPE_HEARTBEAT")] Heartbeat = 0,
     [pbr::OriginalName("MESSAGE_TYPE_BUSINESS")] Business = 1,
-    [pbr::OriginalName("MESSAGE_TYPE_DISCONNECT")] Disconnect = 2,
+    [pbr::OriginalName("MESSAGE_TYPE_TIME_SYNC")] TimeSync = 2,
+    [pbr::OriginalName("MESSAGE_TYPE_DISCONNECT")] Disconnect = 3,
   }
 
   public enum DisconnectReason {
@@ -838,16 +840,16 @@ namespace Pisces.Protocol {
 
   }
 
-  public sealed partial class HeartbeatMessage : pb::IMessage<HeartbeatMessage>
+  public sealed partial class TimeSyncMessage : pb::IMessage<TimeSyncMessage>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
   #endif
   {
-    private static readonly pb::MessageParser<HeartbeatMessage> _parser = new pb::MessageParser<HeartbeatMessage>(() => new HeartbeatMessage());
+    private static readonly pb::MessageParser<TimeSyncMessage> _parser = new pb::MessageParser<TimeSyncMessage>(() => new TimeSyncMessage());
     private pb::UnknownFieldSet _unknownFields;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public static pb::MessageParser<HeartbeatMessage> Parser { get { return _parser; } }
+    public static pb::MessageParser<TimeSyncMessage> Parser { get { return _parser; } }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -863,7 +865,7 @@ namespace Pisces.Protocol {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public HeartbeatMessage() {
+    public TimeSyncMessage() {
       OnConstruction();
     }
 
@@ -871,45 +873,59 @@ namespace Pisces.Protocol {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public HeartbeatMessage(HeartbeatMessage other) : this() {
-      timestamp_ = other.timestamp_;
+    public TimeSyncMessage(TimeSyncMessage other) : this() {
+      clientTime_ = other.clientTime_;
+      serverTime_ = other.serverTime_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public HeartbeatMessage Clone() {
-      return new HeartbeatMessage(this);
+    public TimeSyncMessage Clone() {
+      return new TimeSyncMessage(this);
     }
 
-    /// <summary>Field number for the "timestamp" field.</summary>
-    public const int TimestampFieldNumber = 1;
-    private long timestamp_;
+    /// <summary>Field number for the "client_time" field.</summary>
+    public const int ClientTimeFieldNumber = 1;
+    private long clientTime_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public long Timestamp {
-      get { return timestamp_; }
+    public long ClientTime {
+      get { return clientTime_; }
       set {
-        timestamp_ = value;
+        clientTime_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "server_time" field.</summary>
+    public const int ServerTimeFieldNumber = 2;
+    private long serverTime_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public long ServerTime {
+      get { return serverTime_; }
+      set {
+        serverTime_ = value;
       }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
-      return Equals(other as HeartbeatMessage);
+      return Equals(other as TimeSyncMessage);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public bool Equals(HeartbeatMessage other) {
+    public bool Equals(TimeSyncMessage other) {
       if (ReferenceEquals(other, null)) {
         return false;
       }
       if (ReferenceEquals(other, this)) {
         return true;
       }
-      if (Timestamp != other.Timestamp) return false;
+      if (ClientTime != other.ClientTime) return false;
+      if (ServerTime != other.ServerTime) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -917,7 +933,8 @@ namespace Pisces.Protocol {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override int GetHashCode() {
       int hash = 1;
-      if (Timestamp != 0L) hash ^= Timestamp.GetHashCode();
+      if (ClientTime != 0L) hash ^= ClientTime.GetHashCode();
+      if (ServerTime != 0L) hash ^= ServerTime.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -936,9 +953,13 @@ namespace Pisces.Protocol {
     #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       output.WriteRawMessage(this);
     #else
-      if (Timestamp != 0L) {
+      if (ClientTime != 0L) {
         output.WriteRawTag(8);
-        output.WriteInt64(Timestamp);
+        output.WriteInt64(ClientTime);
+      }
+      if (ServerTime != 0L) {
+        output.WriteRawTag(16);
+        output.WriteInt64(ServerTime);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -950,9 +971,13 @@ namespace Pisces.Protocol {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
-      if (Timestamp != 0L) {
+      if (ClientTime != 0L) {
         output.WriteRawTag(8);
-        output.WriteInt64(Timestamp);
+        output.WriteInt64(ClientTime);
+      }
+      if (ServerTime != 0L) {
+        output.WriteRawTag(16);
+        output.WriteInt64(ServerTime);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
@@ -964,8 +989,11 @@ namespace Pisces.Protocol {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public int CalculateSize() {
       int size = 0;
-      if (Timestamp != 0L) {
-        size += 1 + pb::CodedOutputStream.ComputeInt64Size(Timestamp);
+      if (ClientTime != 0L) {
+        size += 1 + pb::CodedOutputStream.ComputeInt64Size(ClientTime);
+      }
+      if (ServerTime != 0L) {
+        size += 1 + pb::CodedOutputStream.ComputeInt64Size(ServerTime);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -975,12 +1003,15 @@ namespace Pisces.Protocol {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public void MergeFrom(HeartbeatMessage other) {
+    public void MergeFrom(TimeSyncMessage other) {
       if (other == null) {
         return;
       }
-      if (other.Timestamp != 0L) {
-        Timestamp = other.Timestamp;
+      if (other.ClientTime != 0L) {
+        ClientTime = other.ClientTime;
+      }
+      if (other.ServerTime != 0L) {
+        ServerTime = other.ServerTime;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -998,7 +1029,11 @@ namespace Pisces.Protocol {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 8: {
-            Timestamp = input.ReadInt64();
+            ClientTime = input.ReadInt64();
+            break;
+          }
+          case 16: {
+            ServerTime = input.ReadInt64();
             break;
           }
         }
@@ -1017,7 +1052,11 @@ namespace Pisces.Protocol {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
           case 8: {
-            Timestamp = input.ReadInt64();
+            ClientTime = input.ReadInt64();
+            break;
+          }
+          case 16: {
+            ServerTime = input.ReadInt64();
             break;
           }
         }

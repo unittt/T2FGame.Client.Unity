@@ -49,6 +49,15 @@ namespace Pisces.Client.Sdk
         /// </summary>
         public static RequestCommand Heartbeat() => Of(0, _emptyByteString, MessageType.Heartbeat);
 
+        /// <summary>
+        /// 创建一个用于时间同步的请求命令实例。
+        /// 路由标识为 0，包含客户端当前时间戳，命令类型为时间同步。
+        /// </summary>
+        public static RequestCommand TimeSync()
+        {
+            var msg = new TimeSyncMessage { ClientTime = TimeUtils.GetLocalTimeMs() };
+            return Of(0, msg.ToByteString(), MessageType.TimeSync);
+        }
         #endregion
 
         #region 基础类型重载（利用隐式转换）

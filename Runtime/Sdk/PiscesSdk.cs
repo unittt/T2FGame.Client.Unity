@@ -59,6 +59,30 @@ namespace Pisces.Client.Sdk
         /// </summary>
         public bool IsInitialized => _initialized;
 
+        #region 时间同步属性
+
+        /// <summary>
+        /// 是否已完成时间同步
+        /// </summary>
+        public bool IsTimeSynced => TimeUtils.IsSynced;
+
+        /// <summary>
+        /// 网络往返延迟（毫秒）
+        /// </summary>
+        public float RttMs => TimeUtils.RttMs;
+
+        /// <summary>
+        /// 服务器时间（毫秒时间戳）
+        /// </summary>
+        public long ServerTimeMs => TimeUtils.ServerTimeMs;
+
+        /// <summary>
+        /// 服务器时间（DateTime）
+        /// </summary>
+        public DateTime ServerTime => TimeUtils.ServerTime;
+
+        #endregion
+
         /// <summary>
         /// 连接状态变化事件
         /// </summary>
@@ -73,6 +97,13 @@ namespace Pisces.Client.Sdk
         /// 连接错误事件
         /// </summary>
         public event Action<Exception> OnError;
+
+        /// <summary>
+        /// 收到服务器断线通知事件
+        /// 在连接实际断开前触发，携带断线原因和消息
+        /// 可用于显示断线提示 UI（如"账号在其他设备登录"）
+        /// </summary>
+        public event Action<DisconnectNotify> OnDisconnectNotify;
 
         private PiscesSdk() { }
 
@@ -105,6 +136,7 @@ namespace Pisces.Client.Sdk
             _connectionManager.OnStateChanged += HandleStateChanged;
             _connectionManager.OnError += HandleError;
             _connectionManager.Client.OnMessageReceived += HandleMessageReceived;
+            _connectionManager.Client.OnDisconnectNotify += HandleDisconnectNotify;
             _requestManager.OnError += HandleError;
 
             _initialized = true;
@@ -147,6 +179,19 @@ namespace Pisces.Client.Sdk
         public void Close()
         {
             _connectionManager?.Close();
+        }
+
+        /// <summary>
+        /// 请求时间同步
+        /// 发送时间同步请求到服务器，更新本地时间偏移
+        /// </summary>
+        public void RequestTimeSync()
+        {
+            if (!IsConnected)
+                return;
+
+            var command = RequestCommand.TimeSync();
+            _connectionManager.Client.SendRequest(command);
         }
 
         #endregion
@@ -418,6 +463,11 @@ namespace Pisces.Client.Sdk
             OnError?.Invoke(ex);
         }
 
+        private void HandleDisconnectNotify(DisconnectNotify notify)
+        {
+            OnDisconnectNotify?.Invoke(notify);
+        }
+
         #endregion
 
         #region 工具方法
@@ -458,6 +508,7 @@ namespace Pisces.Client.Sdk
                     if (_connectionManager.Client != null)
                     {
                         _connectionManager.Client.OnMessageReceived -= HandleMessageReceived;
+                        _connectionManager.Client.OnDisconnectNotify -= HandleDisconnectNotify;
                     }
                 }
 
@@ -469,6 +520,9 @@ namespace Pisces.Client.Sdk
                 // 释放管理器
                 _connectionManager?.Dispose();
                 _messageRouter?.ClearAll();
+
+                // 重置时间同步状态
+                TimeUtils.Reset();
 
                 _connectionManager = null;
                 _messageRouter = null;

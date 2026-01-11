@@ -60,6 +60,12 @@ namespace Pisces.Client.Network
         public event Action<ExternalMessage> OnMessageReceived;
         public event Action<Exception> OnError;
 
+        /// <summary>
+        /// 收到服务器断线通知事件
+        /// 在连接实际断开前触发，携带断线原因和消息
+        /// </summary>
+        public event Action<DisconnectNotify> OnDisconnectNotify;
+
         public GameClient(GameClientOptions options = null)
         {
             _options = options?.Clone() ?? new GameClientOptions();
@@ -336,9 +342,42 @@ namespace Pisces.Client.Network
                 GameLogger.Log("[GameClient] 收到心跳响应");
                 return;
             }
-            else if (message.MessageType == MessageType.Disconnect)
+
+            // 时间同步
+            if (message.MessageType == MessageType.TimeSync)
             {
-                // TODO：断线处理
+                var timeSyncMsg = TimeSyncMessage.Parser.ParseFrom(message.Data);
+                TimeUtils.UpdateSync(timeSyncMsg.ClientTime, timeSyncMsg.ServerTime);
+                return;
+            }
+
+            // 断线通知
+            if (message.MessageType == MessageType.Disconnect)
+            {
+                // 解析断线通知
+                var disconnectNotify = DisconnectNotify.Parser.ParseFrom(message.Data);
+
+                GameLogger.LogWarning(
+                    $"[GameClient] 收到服务器断线通知: Reason={disconnectNotify.Reason}, Message={disconnectNotify.Message}"
+                );
+
+                // 触发断线通知事件，让上层处理（如显示提示 UI）
+                OnDisconnectNotify?.Invoke(disconnectNotify);
+
+                // 根据断线原因决定是否允许自动重连
+                if (!IsReconnectAllowed(disconnectNotify.Reason))
+                {
+                    // 禁止重连的情况，直接关闭客户端
+                    GameLogger.Log($"[GameClient] 断线原因 {disconnectNotify.Reason} 不允许重连，关闭客户端");
+                    Close();
+                }
+                else
+                {
+                    // 允许重连的情况，正常断开（会触发自动重连）
+                    _channel?.Disconnect();
+                }
+
+                return;
             }
 
             // 创建响应消息
@@ -354,6 +393,9 @@ namespace Pisces.Client.Network
 
             // 触发消息接收事件（所有业务消息都触发，包括请求响应和服务器推送）
             OnMessageReceived?.Invoke(message);
+            
+            // 归还响应消息
+            ReferencePool<ResponseMessage>.Despawn(response);
         }
 
         private void OnChannelDisconnect(IProtocolChannel channel)
@@ -437,6 +479,33 @@ namespace Pisces.Client.Network
         #endregion
 
         #region Reconnect
+
+        /// <summary>
+        /// 判断断线原因是否允许自动重连
+        /// </summary>
+        /// <param name="reason">断线原因</param>
+        /// <returns>是否允许重连</returns>
+        private static bool IsReconnectAllowed(DisconnectReason reason)
+        {
+            return reason switch
+            {
+                // 不允许重连的情况
+                DisconnectReason.DuplicateLogin => false,        // 重复登录（被顶号）
+                DisconnectReason.Banned => false,                // 被封禁
+                DisconnectReason.ServerMaintenance => false,     // 服务器维护
+                DisconnectReason.AuthenticationFailed => false,  // 认证失败
+                DisconnectReason.ServerClose => false,           // 服务器关闭
+
+                // 允许重连的情况
+                DisconnectReason.Unknown => true,                // 未知原因
+                DisconnectReason.ClientClose => true,            // 客户端关闭（一般不会从服务器发来）
+                DisconnectReason.IdleTimeout => true,            // 空闲超时
+                DisconnectReason.NetworkError => true,           // 网络错误
+
+                // 默认允许重连
+                _ => true
+            };
+        }
 
         private void StartReconnect()
         {

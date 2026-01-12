@@ -17,6 +17,7 @@ namespace Pisces.Client.Editor
     public class PiscesNetworkMonitor : EditorWindow
     {
         // 窗口状态
+        private Vector2 _mainScrollPosition;
         private Vector2 _logScrollPosition;
         private string _logFilter = "";
         private bool _autoScroll = true;
@@ -170,8 +171,10 @@ namespace Pisces.Client.Editor
             EditorGUILayout.Space(5);
 
             // 主内容区域
-            using (var scrollView = new EditorGUILayout.ScrollViewScope(Vector2.zero))
+            using (var scrollView = new EditorGUILayout.ScrollViewScope(_mainScrollPosition))
             {
+                _mainScrollPosition = scrollView.scrollPosition;
+
                 DrawConnectionSection(client, options);
                 DrawStatisticsSection(stats);
                 DrawHeartbeatSection(stats, options);
@@ -492,14 +495,17 @@ namespace Pisces.Client.Editor
 
                     foreach (var log in _cachedLogs)
                     {
-                        // 应用过滤
-                        if (_logTypeFilter == 1 && !log.IsOutgoing) continue;
-                        if (_logTypeFilter == 2 && log.IsOutgoing) continue;
+                        switch (_logTypeFilter)
+                        {
+                            // 应用过滤
+                            case 1 when !log.IsOutgoing:
+                            case 2 when log.IsOutgoing:
+                                continue;
+                        }
 
                         if (!string.IsNullOrEmpty(_logFilter))
                         {
-                            if (!log.CmdDisplay.Contains(_logFilter) &&
-                                !log.MessageTypeName.Contains(_logFilter, StringComparison.OrdinalIgnoreCase))
+                            if (!log.CmdDisplay.Contains(_logFilter))
                             {
                                 continue;
                             }
@@ -526,7 +532,7 @@ namespace Pisces.Client.Editor
             var sizeStr = log.DataSize > 0 ? $" ({log.DataSize}B)" : "";
             var statusStr = log.IsSuccess ? "" : $" <color=red>[{log.ErrorInfo}]</color>";
 
-            var text = $"{timeStr} {arrow} {log.CmdDisplay} {log.MessageTypeName}{sizeStr}{statusStr}";
+            var text = $"{timeStr} {arrow} {log.CmdDisplay}{sizeStr}{statusStr}";
 
             using (new EditorGUILayout.HorizontalScope())
             {

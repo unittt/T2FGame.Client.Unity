@@ -280,7 +280,7 @@ namespace Pisces.Client.Sdk
         private static void ThrowIfError(ResponseMessage response)
         {
             if (response.HasError)
-                throw new Exception($"Request failed with status: {response.ResponseStatus}");
+                throw new PiscesException(response);
         }
 
         #endregion

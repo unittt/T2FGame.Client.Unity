@@ -59,10 +59,7 @@ namespace Pisces.Client.Network
         /// <param name="command">请求命令</param>
         /// <param name="cancellationToken">取消令牌</param>
         /// <returns>响应消息</returns>
-        public async UniTask<ResponseMessage> RequestAsync(
-            RequestCommand command,
-            CancellationToken cancellationToken = default
-        )
+        public async UniTask<ResponseMessage> RequestAsync(RequestCommand command, CancellationToken cancellationToken = default)
         {
             if (_disposed)
                 throw new ObjectDisposedException(nameof(GameClient));
@@ -281,10 +278,7 @@ namespace Pisces.Client.Network
             }
 
             // 记录接收统计
-            int dataSize = message.Data?.Length ?? 0;
-            bool isSuccess = message.ResponseStatus == 0;
-            string errorInfo = isSuccess ? null : $"Status: {message.ResponseStatus}";
-            _statistics.RecordReceive(dataSize, message.CmdMerge, message.MsgId, null, isSuccess, errorInfo);
+            _statistics.RecordReceive(message);
 
             // 创建响应消息
             var response = ReferencePool<ResponseMessage>.Spawn();

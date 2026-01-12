@@ -31,11 +31,6 @@ namespace Pisces.Client.Network.Core
         public int MsgId { get; set; }
 
         /// <summary>
-        /// 消息类型名称
-        /// </summary>
-        public string MessageTypeName { get; set; }
-
-        /// <summary>
         /// 数据大小 (字节)
         /// </summary>
         public int DataSize { get; set; }
@@ -218,7 +213,7 @@ namespace Pisces.Client.Network.Core
         /// <summary>
         /// 记录发送消息
         /// </summary>
-        public void RecordSend(int bytes, int cmdMerge = 0, int msgId = 0, string typeName = null)
+        public void RecordSend(int bytes, int cmdMerge = 0, int msgId = 0)
         {
             _totalSendCount++;
             _totalSendBytes += bytes;
@@ -231,18 +226,25 @@ namespace Pisces.Client.Network.Core
                     IsOutgoing = true,
                     CmdMerge = cmdMerge,
                     MsgId = msgId,
-                    MessageTypeName = typeName ?? "Unknown",
                     DataSize = bytes,
                     IsSuccess = true
                 });
             }
         }
 
+
+        public void RecordReceive(ExternalMessage message)
+        {
+            var dataSize = message.Data?.Length ?? 0;
+            var isSuccess = message.ResponseStatus == 0;
+            var errorInfo = isSuccess ? null : $"Status: {message.ResponseStatus}";
+            RecordReceive(dataSize, message.CmdMerge, message.MsgId, isSuccess, errorInfo);
+        }
+
         /// <summary>
         /// 记录接收消息
         /// </summary>
-        public void RecordReceive(int bytes, int cmdMerge = 0, int msgId = 0, string typeName = null,
-            bool isSuccess = true, string errorInfo = null)
+        private void RecordReceive(int bytes, int cmdMerge = 0, int msgId = 0, bool isSuccess = true, string errorInfo = null)
         {
             _totalRecvCount++;
             _totalRecvBytes += bytes;
@@ -255,7 +257,6 @@ namespace Pisces.Client.Network.Core
                     IsOutgoing = false,
                     CmdMerge = cmdMerge,
                     MsgId = msgId,
-                    MessageTypeName = typeName ?? "Unknown",
                     DataSize = bytes,
                     IsSuccess = isSuccess,
                     ErrorInfo = errorInfo

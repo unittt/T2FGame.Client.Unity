@@ -36,8 +36,7 @@ namespace Pisces.Client.Sdk
         /// 创建一个新的请求命令实例，并指定其业务路由标识及 Protobuf 消息数据。
         /// 若传入的消息为空，则数据部分将被设为空字符串。
         /// </summary>
-        public static RequestCommand Of<T>(int cmdMerge, T message)
-            where T : IMessage
+        public static RequestCommand Of<T>(int cmdMerge, T message) where T : IMessage
         {
             var byteString = message?.ToByteString() ?? _emptyByteString;
             return Of(cmdMerge, byteString);

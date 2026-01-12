@@ -29,24 +29,24 @@
 
 ---
 
-## 📖 项目简介
+## 项目简介
 
 Pisces Client SDK 是一个专为 Unity 游戏开发设计的**轻量、高性能**的网络通信框架。基于 **Protobuf 协议**，提供完整的客户端网络功能。
 
 | 特性 | 说明 |
 |------|------|
-| 🎯 **零业务耦合** | 纯网络层，可集成到任意 Unity 项目 |
-| ⚡ **高性能** | 基于 UniTask 异步编程，对象池减少 GC |
-| 🌐 **跨平台** | TCP、UDP、WebSocket，适配所有平台 |
-| 🛡️ **可靠性** | 自动重连、心跳保活、断线通知、异常隔离 |
-| ⏱️ **时间同步** | 客户端与服务器时钟同步，RTT 测量 |
-| 🔒 **流量控制** | 令牌桶限流、发送失败通知 |
-| 📊 **智能内存** | PacketBuffer 自动扩缩容，降低内存占用 |
-| 🔄 **Unity 集成** | 自动生命周期管理，编辑器友好 |
+| **零业务耦合** | 纯网络层，可集成到任意 Unity 项目 |
+| **高性能** | 基于 UniTask 异步编程，对象池减少 GC |
+| **跨平台** | TCP、UDP、WebSocket，适配所有平台 |
+| **可靠性** | 自动重连、心跳保活、断线通知、异常隔离 |
+| **时间同步** | 客户端与服务器时钟同步，RTT 测量 |
+| **流量控制** | 令牌桶限流、发送失败通知 |
+| **智能内存** | PacketBuffer 自动扩缩容，降低内存占用 |
+| **Unity 集成** | 自动生命周期管理，编辑器友好 |
 
 ---
 
-## 🏗️ 架构设计
+## 架构设计
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -71,10 +71,10 @@ Pisces Client SDK 是一个专为 Unity 游戏开发设计的**轻量、高性�
 └────────────────────────┬────────────────────────────────┘
                          │
 ┌────────────────────────┴────────────────────────────────┐
-│  Protocol Channel (传输层)                               │
-│  ├─ TcpChannel      (可靠、有序)                         │
-│  ├─ UdpChannel      (低延迟)                             │
-│  └─ WebSocketChannel (WebGL 兼容)                        │
+│  Protocol Channel (传输层，实现 IDisposable)             │
+│  ├─ TcpChannel      (可靠、有序，支持 DNS/IPv6)          │
+│  ├─ UdpChannel      (低延迟，支持 DNS/IPv6)              │
+│  └─ WebSocketChannel (WebGL 兼容，需启用宏)              │
 └────────────────────────┬────────────────────────────────┘
                          │
 ┌────────────────────────┴────────────────────────────────┐
@@ -86,7 +86,7 @@ Pisces Client SDK 是一个专为 Unity 游戏开发设计的**轻量、高性�
 
 ---
 
-## 📦 安装
+## 安装
 
 ### Git URL（推荐）
 
@@ -104,7 +104,7 @@ https://github.com/PiscesGameDev/Pisces.Client.Unity.git
 
 ---
 
-## 🚀 快速开始
+## 快速开始
 
 ### 1. 初始化与连接
 
@@ -206,7 +206,7 @@ PiscesSdk.Instance.Dispose();
 
 ---
 
-## 🔧 核心功能
+## 核心功能
 
 ### 连接状态
 
@@ -235,6 +235,22 @@ PiscesSdk.Instance.OnStateChanged += state =>
             break;
     }
 };
+```
+
+### 智能连接管理
+
+`ConnectionManager` 提供智能连接复用：
+
+```csharp
+// 首次连接 - 创建新 GameClient
+await PiscesSdk.Instance.ConnectAsync("192.168.1.100", 10100);
+
+// 重复连接相同地址 - 跳过，直接返回
+await PiscesSdk.Instance.ConnectAsync("192.168.1.100", 10100);
+// 输出: [ConnectionManager] 已连接到 192.168.1.100:10100，跳过重复连接
+
+// 连接不同地址 - 断开旧连接，重建客户端
+await PiscesSdk.Instance.ConnectAsync("192.168.1.200", 10100);
 ```
 
 ### 断线通知
@@ -326,7 +342,7 @@ var options = new GameClientOptions
 
 ---
 
-## 🛡️ 可靠性与性能
+## 可靠性与性能
 
 ### 连接状态机
 
@@ -381,6 +397,27 @@ sdk.OnSendFailed += (cmdMerge, msgId, result) =>
 };
 ```
 
+### 通道层发送失败
+
+通道层（Channel）也支持发送失败通知：
+
+```csharp
+// 发送失败原因
+public enum SendFailureReason
+{
+    NotConnected,    // 未连接
+    InvalidData,     // 数据无效
+    QueueFull,       // 发送队列已满
+    ChannelClosed    // 通道已关闭
+}
+
+// 通道会在发送失败时触发 SendFailedEvent
+channel.SendFailedEvent += (channel, data, reason) =>
+{
+    Debug.LogWarning($"通道发送失败: {reason}");
+};
+```
+
 ### 令牌桶限流
 
 使用令牌桶算法防止发送消息过于频繁：
@@ -410,21 +447,24 @@ var options = new GameClientOptions
 // 相比固定 64KB 缓冲区，可节省 93% 初始内存
 ```
 
-### 待处理请求自动清理
+### 资源自动释放
 
-自动清理已完成但未移除的请求，防止内存泄漏：
+所有通道实现 `IDisposable`，确保资源正确释放：
 
 ```csharp
-// 无需手动处理，SDK 自动管理
-// 每 5 秒检查一次，清理超时或已完成的请求
+// 通道层
+public interface IProtocolChannel : IDisposable
+{
+    // ...
+}
 
-// 查看当前待处理请求数量
-int pending = sdk.Client.PendingRequestCount;
+// PiscesSdk.Dispose() 会自动释放所有资源
+// 包括 ConnectionManager → GameClient → IProtocolChannel
 ```
 
 ---
 
-## 📚 API 参考
+## API 参考
 
 ### PiscesSdk
 
@@ -476,7 +516,7 @@ int pending = sdk.Client.PendingRequestCount;
 | 配置项 | 类型 | 默认值 | 说明 |
 |--------|------|--------|------|
 | `ChannelType` | `ChannelType` | `Tcp` | 传输协议 |
-| `Host` | `string` | `localhost` | 服务器地址 |
+| `Host` | `string` | `localhost` | 服务器地址（支持域名） |
 | `Port` | `int` | `9090` | 服务器端口 |
 | `ConnectTimeoutMs` | `int` | `10000` | 连接超时（毫秒） |
 | `RequestTimeoutMs` | `int` | `30000` | 请求超时（毫秒） |
@@ -494,6 +534,28 @@ int pending = sdk.Client.PendingRequestCount;
 | `MaxSendRate` | `int` | `100` | 每秒最大发送消息数 |
 | `MaxBurstSize` | `int` | `50` | 最大突发消息数 |
 | `UseWorkerThread` | `bool` | `true` | 使用工作线程（WebGL 为 false） |
+
+### IProtocolChannel
+
+传输通道接口，所有通道实现此接口：
+
+```csharp
+public interface IProtocolChannel : IDisposable
+{
+    ChannelType ChannelType { get; }
+    bool IsConnected { get; }
+
+    void OnInit();
+    void Connect(string host, int port);
+    void Disconnect();
+    bool Send(byte[] data);
+
+    event Action<IProtocolChannel> SendMessageEvent;
+    event Action<IProtocolChannel, byte[]> ReceiveMessageEvent;
+    event Action<IProtocolChannel> DisconnectServerEvent;
+    event Action<IProtocolChannel, byte[], SendFailureReason> SendFailedEvent;
+}
+```
 
 ### RequestCommand
 
@@ -580,7 +642,7 @@ TimeUtils.GetLocalTimeMs()  // 本地时间戳
 
 ---
 
-## 📝 协议规范
+## 协议规范
 
 服务器只需适配 [`pisces_common.proto`](Proto/pisces_common.proto) 即可与客户端通信。
 
@@ -656,7 +718,7 @@ UnityEngine.Vector3 uPos = protoVec;
 
 ---
 
-## 🔌 服务器对接
+## 服务器对接
 
 服务器只需导入 [`pisces_common.proto`](Proto/pisces_common.proto) 并按以下规范实现即可与客户端通信。
 
@@ -782,11 +844,11 @@ write_packet(msg):
 | `4` | 资源不存在 | 请求的资源不存在 |
 | `5` | 限流 | 请求过于频繁 |
 
-> 💡 状态码可根据项目需求自定义，客户端通过 `response.ResponseStatus` 获取。
+> 状态码可根据项目需求自定义，客户端通过 `response.ResponseStatus` 获取。
 
 ---
 
-## 🛠️ 编辑器工具
+## 编辑器工具
 
 ### Project Settings
 
@@ -799,6 +861,7 @@ write_packet(msg):
 - **重连设置** - 自动重连、重连间隔、最大重连次数
 - **缓冲区设置** - 接收/发送缓冲区大小
 - **调试设置** - 日志开关、工作线程开关
+- **自动宏管理** - 切换到 WebSocket 协议时自动添加 `ENABLE_WEBSOCKET` 宏
 
 ```csharp
 // 代码中使用配置
@@ -834,7 +897,7 @@ Debug.Log($"当前环境: {env.Name} ({env.Host}:{env.Port})");
 
 ---
 
-## 🔧 平台适配
+## 平台适配
 
 | 平台 | TCP | UDP | WebSocket | 推荐 |
 |------|-----|-----|-----------|------|
@@ -842,11 +905,24 @@ Debug.Log($"当前环境: {env.Name} ({env.Host}:{env.Port})");
 | Android/iOS | ✅ | ✅ | ✅ | TCP |
 | **WebGL** | ❌ | ❌ | ✅ | **WebSocket** |
 
+### 通道特性
+
+| 通道 | 特性 |
+|------|------|
+| **TcpChannel** | 可靠有序传输，支持 DNS 解析，支持 IPv4/IPv6 |
+| **UdpChannel** | 低延迟无连接，支持 DNS 解析，支持 IPv4/IPv6 |
+| **WebSocketChannel** | WebGL 兼容，支持 `ws://` 和 `wss://` 协议 |
+
 ### 启用 WebSocket
 
 WebSocket 功能通过 `ENABLE_WEBSOCKET` 编译符号控制。
 
-**启用步骤：**
+**方式 1：自动管理（推荐）**
+
+在 **Edit → Project Settings → Pisces Client** 中切换协议为 WebSocket，编辑器会自动添加宏。
+
+**方式 2：手动添加**
+
 1. 打开 **Edit → Project Settings → Player**
 2. 找到 **Scripting Define Symbols**
 3. 添加 `ENABLE_WEBSOCKET`
@@ -860,11 +936,11 @@ var options = new GameClientOptions
 };
 ```
 
-> 💡 使用 TCP/UDP 时，移除 `ENABLE_WEBSOCKET` 可减小包体。
+> 使用 TCP/UDP 时，移除 `ENABLE_WEBSOCKET` 可减小包体。
 
 ---
 
-## ❓ 常见问题
+## 常见问题
 
 **Q: 如何处理断线重连？**
 ```csharp
@@ -887,10 +963,21 @@ var task = PiscesSdk.Instance.RequestAsync<T>(cmd, cts.Token);
 cts.Cancel();
 ```
 
+**Q: 重复调用 ConnectAsync 会发生什么？**
+```csharp
+// 已连接到相同地址 → 跳过，输出日志
+await sdk.ConnectAsync("127.0.0.1", 10100);
+await sdk.ConnectAsync("127.0.0.1", 10100); // 跳过
+
+// 已连接到不同地址 → 断开旧连接，重建客户端
+await sdk.ConnectAsync("192.168.1.100", 10100); // 重连
+```
+
 **Q: WebGL 连接失败？**
 - 确保使用 `ChannelType.WebSocket`
 - Host 使用完整 URL（`ws://` 或 `wss://`）
 - 检查服务器 CORS 配置
+- 确保已添加 `ENABLE_WEBSOCKET` 宏
 
 **Q: Unity 编辑器退出时报错？**
 
@@ -920,56 +1007,71 @@ if (TimeUtils.IsSynced)
 
 ---
 
-## 📁 目录结构
+## 目录结构
 
 ```
 Pisces.Client.Unity/
 ├── Editor/
-│   ├── PiscesMenuItems.cs           # 菜单项
-│   ├── PiscesNetworkMonitor.cs      # 网络监控窗口
+│   ├── PiscesMenuItems.cs              # 菜单项
+│   ├── PiscesNetworkMonitor.cs         # 网络监控窗口
 │   └── Settings/
-│       └── PiscesSettingsProvider.cs  # Project Settings 面板
+│       └── PiscesSettingsProvider.cs   # Project Settings 面板（含自动宏管理）
 ├── Proto/
-│   └── pisces_common.proto          # 协议定义
+│   └── pisces_common.proto             # 协议定义
 ├── Runtime/
+│   ├── Assembly/                       # 程序集相关
 │   ├── Network/
-│   │   ├── Channel/                 # 传输通道（TCP/UDP/WebSocket）
-│   │   ├── GameClient.cs            # 网络客户端核心（partial）
-│   │   ├── GameClient.Messaging.cs  # 消息收发模块
-│   │   ├── GameClient.Heartbeat.cs  # 心跳保活模块
-│   │   ├── GameClient.Reconnect.cs  # 自动重连模块
-│   │   ├── GameClient.PendingRequests.cs  # 待处理请求管理
-│   │   ├── GameClientOptions.cs     # 配置项
-│   │   ├── ConnectionStateMachine.cs # 连接状态机
-│   │   ├── NetworkStatistics.cs     # 网络统计
-│   │   ├── RateLimiter.cs           # 令牌桶限流器
-│   │   ├── SendResult.cs            # 发送结果枚举
-│   │   ├── PacketCodec.cs           # 编解码器
-│   │   └── PacketBuffer.cs          # 智能粘包处理（自动扩缩容）
-│   ├── Protocol/
-│   │   ├── PiscesCommon.cs          # 生成的 Protobuf 类
-│   │   ├── CmdKit.cs                # 命令路由工具
-│   │   └── ProtoSerializer.cs       # 序列化辅助
-│   ├── Sdk/
-│   │   ├── PiscesSdk.cs             # SDK 入口（Facade）
-│   │   ├── RequestCommand.cs        # 请求命令
-│   │   ├── ResponseMessage.cs       # 响应消息
-│   │   └── Managers/                # 内部管理器
-│   │       └── MessageRouter.cs     # 消息路由（异常隔离）
+│   │   ├── Channel/                    # 传输通道
+│   │   │   ├── IProtocolChannel.cs     # 通道接口（含 IDisposable）
+│   │   │   ├── ChannelFactory.cs       # 通道工厂
+│   │   │   ├── ChannelType.cs          # 通道类型枚举
+│   │   │   ├── ProtocolChannelBase.cs  # 通道基类（TCP/UDP，支持 DNS/IPv6）
+│   │   │   ├── TcpChannel.cs           # TCP 通道（返回原始字节）
+│   │   │   ├── UdpChannel.cs           # UDP 通道（支持 DNS/IPv6）
+│   │   │   └── WebSocketChannel.cs     # WebSocket 通道（需 ENABLE_WEBSOCKET）
+│   │   ├── Client/                     # 客户端实现
+│   │   │   ├── GameClient.cs           # 网络客户端核心（partial）
+│   │   │   ├── GameClient.Messaging.cs # 消息收发模块
+│   │   │   ├── GameClient.Heartbeat.cs # 心跳保活模块
+│   │   │   ├── GameClient.Reconnect.cs # 自动重连模块
+│   │   │   ├── GameClient.PendingRequests.cs  # 待处理请求管理
+│   │   │   ├── GameClientOptions.cs    # 配置项
+│   │   │   └── IGameClient.cs          # 客户端接口
+│   │   └── Core/                       # 核心组件
+│   │       ├── ConnectionState.cs      # 连接状态枚举
+│   │       ├── ConnectionStateMachine.cs # 连接状态机
+│   │       ├── NetworkStatistics.cs    # 网络统计
+│   │       ├── PacketBuffer.cs         # 智能粘包处理（自动扩缩容）
+│   │       ├── PacketCodec.cs          # 编解码器
+│   │       └── SendResult.cs           # 发送结果枚举
+│   ├── Protocol/                       # 协议相关
+│   │   ├── PiscesCommon.cs             # 生成的 Protobuf 类
+│   │   └── ...
+│   ├── Sdk/                            # SDK 层
+│   │   ├── PiscesSdk.cs                # SDK 入口（Facade）
+│   │   ├── MsgIdManager.cs             # 消息 ID 管理
+│   │   ├── RequestCommand.cs           # 请求命令
+│   │   ├── RequestCommand.Factory.cs   # 请求命令工厂
+│   │   ├── ResponseMessage.cs          # 响应消息
+│   │   ├── ResponseMessage.Accessors.cs # 响应消息访问器
+│   │   └── Managers/                   # 内部管理器
+│   │       ├── ConnectionManager.cs    # 连接管理（智能复用）
+│   │       ├── MessageRouter.cs        # 消息路由（异常隔离）
+│   │       └── RequestManager.cs       # 请求管理
 │   ├── Settings/
-│   │   └── PiscesSettings.cs        # 全局配置 ScriptableObject
-│   ├── Utils/
-│   │   ├── TimeUtils.cs             # 时间同步工具
-│   │   ├── Log/                     # 日志系统
-│   │   └── Pool/                    # 对象池
-│   └── Unity/
-│       └── PiscesLifecycleManager.cs  # Unity 生命周期
+│   │   └── PiscesSettings.cs           # 全局配置 ScriptableObject
+│   ├── Unity/
+│   │   └── PiscesLifecycleManager.cs   # Unity 生命周期
+│   └── Utils/
+│       ├── TimeUtils.cs                # 时间同步工具
+│       ├── Log/                        # 日志系统
+│       └── Pool/                       # 对象池
 ├── package.json
 └── README.md
 ```
 
 ---
 
-## 📄 License
+## License
 
 MIT License

@@ -84,12 +84,27 @@ namespace Pisces.Client.Sdk
         {
             EnsureInitialized();
 
+            var isSameAddress = _options.Host == host && _options.Port == port;
+
+            // 如果是相同地址，且已连接或正在连接中，直接返回
+            if (isSameAddress)
+            {
+                var state = _client.State;
+                if (state is ConnectionState.Connected or 
+                    ConnectionState.Connecting or 
+                    ConnectionState.Reconnecting)
+                {
+                    GameLogger.Log($"[ConnectionManager] 已连接或正在连接到 {host}:{port}，跳过");
+                    return;
+                }
+            }
+
             // 更新配置
             _options.Host = host;
             _options.Port = port;
 
-            // 如果客户端未连接，直接复用；否则需要重建
-            if (_client.IsConnected)
+            // 如果地址变更，需要重建客户端（无论当前状态）
+            if (!isSameAddress)
             {
                 RecreateClient();
             }

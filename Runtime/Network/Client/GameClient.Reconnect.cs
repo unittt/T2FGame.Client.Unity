@@ -176,7 +176,7 @@ namespace Pisces.Client.Network
                 {
                     _channel.ReceiveMessageEvent -= OnChannelReceiveMessage;
                     _channel.DisconnectServerEvent -= OnChannelDisconnect;
-                    _channel.Disconnect();
+                    CleanupChannel(_channel);
                 }
 
                 _channel = newChannel;

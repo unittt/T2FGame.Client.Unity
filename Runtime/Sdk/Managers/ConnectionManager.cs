@@ -84,11 +84,15 @@ namespace Pisces.Client.Sdk
         {
             EnsureInitialized();
 
+            // 更新配置
             _options.Host = host;
             _options.Port = port;
 
-            // 重新创建客户端以应用新配置
-            RecreateClient();
+            // 如果客户端未连接，直接复用；否则需要重建
+            if (_client.IsConnected)
+            {
+                RecreateClient();
+            }
 
             await _client.ConnectAsync();
         }
@@ -112,7 +116,7 @@ namespace Pisces.Client.Sdk
         }
 
         /// <summary>
-        /// 重新创建客户端
+        /// 重新创建客户端（仅在已连接时需要）
         /// </summary>
         private void RecreateClient()
         {

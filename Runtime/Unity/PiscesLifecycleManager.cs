@@ -58,12 +58,12 @@ namespace Pisces.Client.Unity
         {
             try
             {
+                var piscesSdk = PiscesSdk.Instance;
                 // 关闭 SDK 连接
-                if (PiscesSdk.Instance.IsInitialized)
-                {
-                    PiscesSdk.Instance.Close();
-                    GameLogger.Log("[PiscesLifecycleManager] SDK 已清理");
-                }
+                if (!piscesSdk.IsInitialized) return;
+                piscesSdk.Close();
+                piscesSdk.Dispose();
+                GameLogger.Log("[PiscesLifecycleManager] SDK 已清理");
             }
             catch (System.Exception ex)
             {

@@ -259,12 +259,32 @@ namespace Pisces.Client.Network.Channel
         /// </summary>
         public void Dispose()
         {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// 释放资源
+        /// </summary>
+        /// <param name="disposing">是否正在释放托管资源</param>
+        protected virtual void Dispose(bool disposing)
+        {
             if (_isDisposed)
                 return;
 
             _isDisposed = true;
-            Disconnect();
+
+            if (disposing)
+            {
+                Disconnect();
+            }
+
             GameLogger.Log("[WebSocketChannel] 已释放");
+        }
+
+        ~WebSocketChannel()
+        {
+            Dispose(false);
         }
     }
 }

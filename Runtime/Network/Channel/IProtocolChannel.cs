@@ -31,7 +31,7 @@ namespace Pisces.Client.Network.Channel
     /// <summary>
     ///  通信协议通道的接口
     /// </summary>
-    public interface IProtocolChannel
+    public interface IProtocolChannel : IDisposable
     {
         /// <summary>
         /// 传输协议类型

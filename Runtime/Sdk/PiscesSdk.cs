@@ -11,7 +11,7 @@ using Pisces.Protocol;
 namespace Pisces.Client.Sdk
 {
     /// <summary>
-    /// T2F 游戏 SDK 入口
+    /// Pisces Unity SDK 入口
     /// 提供高层次的 API 封装，简化游戏客户端的使用
     /// </summary>
     public class PiscesSdk : IDisposable
@@ -521,6 +521,7 @@ namespace Pisces.Client.Sdk
                 {
                     _connectionManager.OnStateChanged -= HandleStateChanged;
                     _connectionManager.OnError -= HandleError;
+
                     if (_connectionManager.Client != null)
                     {
                         _connectionManager.Client.OnMessageReceived -= HandleMessageReceived;
@@ -549,7 +550,7 @@ namespace Pisces.Client.Sdk
 
             GameLogger.Log("[PiscesSdk] SDK 已释放");
         }
-
+        
         /// <summary>
         /// 重置 SDK 单例（主要用于测试）
         /// </summary>

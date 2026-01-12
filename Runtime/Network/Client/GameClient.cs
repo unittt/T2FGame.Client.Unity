@@ -173,7 +173,7 @@ namespace Pisces.Client.Network
                 {
                     _channel.ReceiveMessageEvent -= OnChannelReceiveMessage;
                     _channel.DisconnectServerEvent -= OnChannelDisconnect;
-                    _channel.Disconnect();
+                    CleanupChannel(_channel);
                 }
 
                 _channel = newChannel;
@@ -330,17 +330,15 @@ namespace Pisces.Client.Network
 
             _disposed = true;
 
+            Debug.Log("释放？");
             if (disposing)
             {
                 // 取消订阅状态机事件
                 _stateMachine.OnStateChanged -= HandleStateMachineStateChanged;
 
                 Close();
-
-                if (_channel is IDisposable disposableChannel)
-                {
-                    disposableChannel.Dispose();
-                }
+                
+                _channel.Dispose();
                 _channel = null;
 
                 _receiveBuffer?.Clear();

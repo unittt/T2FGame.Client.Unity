@@ -25,16 +25,6 @@ namespace Pisces.Client.Network.Channel
         /// </summary>
         private readonly byte[] _receiveBuffer = new byte[UdpReceiveBufferSize];
 
-        /// <summary>
-        /// 服务器端点
-        /// </summary>
-        private EndPoint _serverEndPoint;
-
-        /// <summary>
-        /// 是否已绑定
-        /// </summary>
-        private bool _isBound;
-
         public override ChannelType ChannelType => ChannelType.Udp;
 
         protected override SocketType Way => SocketType.Dgram;
@@ -45,7 +35,7 @@ namespace Pisces.Client.Network.Channel
 
         public override void Connect(string host, int port)
         {
-            if (Client != null && _isBound)
+            if (IsConnected)
             {
                 GameLogger.LogWarning("[UdpChannel] 已连接");
                 return;
@@ -53,42 +43,42 @@ namespace Pisces.Client.Network.Channel
 
             try
             {
-                // 创建 UDP Socket
                 Client?.Close();
-                var socket = new Socket(
-                    AddressFamily.InterNetwork,
-                    SocketType.Dgram,
-                    ProtocolType.Udp
-                )
+
+                // 解析主机地址（支持域名和 IP 地址）
+                IPAddress ipAddress;
+                if (!IPAddress.TryParse(host, out ipAddress))
+                {
+                    // 不是 IP 地址，尝试 DNS 解析
+                    var addresses = Dns.GetHostAddresses(host);
+                    if (addresses == null || addresses.Length == 0)
+                    {
+                        throw new ArgumentException($"无法解析主机地址: {host}");
+                    }
+
+                    // 优先使用 IPv4 地址
+                    ipAddress = Array.Find(addresses, a => a.AddressFamily == AddressFamily.InterNetwork)
+                                ?? addresses[0];
+                }
+
+                var addressFamily = ipAddress.AddressFamily;
+                Client = new Socket(addressFamily, SocketType.Dgram, ProtocolType.Udp)
                 {
                     ReceiveBufferSize = UdpReceiveBufferSize,
                     SendBufferSize = UdpReceiveBufferSize,
                 };
 
-                // 保存服务器端点
-                _serverEndPoint = new IPEndPoint(IPAddress.Parse(host), port);
-
                 // UDP 使用 Connect 可以限定只接收来自指定端点的数据
                 // 同时允许使用 Send 而不是 SendTo
-                socket.Connect(_serverEndPoint);
-
-                // 通过反射设置基类的 Client（因为基类 Client 是 protected set）
-                // 这里我们需要直接调用基类的 Connect 方法来设置
-                // 但由于基类 Connect 会创建新 Socket，我们需要重写整个逻辑
-
-                // 绑定本地端口（让系统自动分配）
-                // socket.Bind(new IPEndPoint(IPAddress.Any, 0));
-
-                _isBound = true;
-
-                // 使用基类的连接方法（会设置 Client 和 _isConnected）
-                base.Connect(host, port);
+                var endPoint = new IPEndPoint(ipAddress, port);
+                Client.Connect(endPoint);
+                IsConnectedInternal = true;
 
                 GameLogger.Log($"[UdpChannel] 已连接到 {host}:{port}");
             }
             catch (Exception ex)
             {
-                _isBound = false;
+                IsConnectedInternal = false;
                 GameLogger.LogError($"[UdpChannel] 连接失败: {ex.Message}");
                 throw;
             }
@@ -149,7 +139,7 @@ namespace Pisces.Client.Network.Channel
         }
 
         /// <summary>
-        /// 发送数据（UDP 无连接，直接发送）
+        /// 发送数据
         /// </summary>
         public override bool Send(byte[] data)
         {
@@ -164,23 +154,7 @@ namespace Pisces.Client.Network.Channel
                 return false;
             }
 
-            // UDP 可以直接发送，不需要排队（无连接、无序）
-            // 但为了保持一致性，我们仍使用基类的队列机制
             return base.Send(data);
-        }
-
-        public override void Disconnect()
-        {
-            _isBound = false;
-            _serverEndPoint = null;
-            base.Disconnect();
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            _isBound = false;
-            _serverEndPoint = null;
-            base.Dispose(disposing);
         }
     }
 }

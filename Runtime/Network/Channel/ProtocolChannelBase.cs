@@ -11,7 +11,7 @@ namespace Pisces.Client.Network.Channel
     /// 通信协议通道的基类
     /// 提供 TCP/UDP 等基于 Socket 的通道的基础实现
     /// </summary>
-    public abstract class ProtocolChannelBase : IProtocolChannel, IDisposable
+    public abstract class ProtocolChannelBase : IProtocolChannel
     {
         /// <summary>
         /// 默认接收缓冲区大小
@@ -26,6 +26,15 @@ namespace Pisces.Client.Network.Channel
         private volatile bool _isEnableThread;
         private volatile bool _isConnected;
         private volatile bool _isDisposed;
+
+        /// <summary>
+        /// 设置连接状态（供子类使用）
+        /// </summary>
+        protected bool IsConnectedInternal
+        {
+            get => _isConnected;
+            set => _isConnected = value;
+        }
 
         private Thread _sendThread;
         private Thread _receiveThread;
@@ -57,7 +66,7 @@ namespace Pisces.Client.Network.Channel
         /// <summary>
         /// 客户端 Socket
         /// </summary>
-        protected Socket Client { get; private set; }
+        protected Socket Client { get; set; }
 
         /// <summary>
         /// Socket 类型
@@ -224,14 +233,32 @@ namespace Pisces.Client.Network.Channel
             try
             {
                 Client?.Close();
-                Client = new Socket(AddressFamily.InterNetwork, Way, Protocol)
+
+                // 解析主机地址（支持域名和 IP 地址）
+                IPAddress ipAddress;
+                if (!IPAddress.TryParse(host, out ipAddress))
+                {
+                    // 不是 IP 地址，尝试 DNS 解析
+                    var addresses = Dns.GetHostAddresses(host);
+                    if (addresses == null || addresses.Length == 0)
+                    {
+                        throw new ArgumentException($"无法解析主机地址: {host}");
+                    }
+
+                    // 优先使用 IPv4 地址
+                    ipAddress = Array.Find(addresses, a => a.AddressFamily == AddressFamily.InterNetwork)
+                                ?? addresses[0];
+                }
+
+                var addressFamily = ipAddress.AddressFamily;
+                Client = new Socket(addressFamily, Way, Protocol)
                 {
                     ReceiveBufferSize = ReceiveBufferSize,
                     SendBufferSize = ReceiveBufferSize,
                     NoDelay = true, // 禁用 Nagle 算法，减少延迟
                 };
 
-                var endPoint = new IPEndPoint(IPAddress.Parse(host), port);
+                var endPoint = new IPEndPoint(ipAddress, port);
                 Client.Connect(endPoint);
                 _isConnected = true;
 

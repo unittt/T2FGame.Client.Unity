@@ -31,7 +31,7 @@ namespace Pisces.Client.Network.Channel
                 ),
             };
 
-            GameLogger.Log($"[ChannelFactory] 已创建 {channelType} 通道");
+            GameLogger.LogDebug($"[ChannelFactory] 创建 {channelType} 通道");
             return channel;
         }
     }

@@ -63,7 +63,7 @@ namespace Pisces.Client.Network
             _cleanupCts = new CancellationTokenSource();
             PendingRequestsCleanupLoop(_cleanupCts.Token).Forget();
 
-            GameLogger.Log("[GameClient] 待处理请求清理任务已启动");
+            GameLogger.LogDebug("[GameClient] 待处理请求清理任务已启动");
         }
 
         /// <summary>
@@ -150,7 +150,7 @@ namespace Pisces.Client.Network
 
             if (cleanedCount > 0 || timedOutCount > 0)
             {
-                GameLogger.Log($"[GameClient] 清理待处理请求: 已完成={cleanedCount}, 超时={timedOutCount}");
+                GameLogger.LogVerbose($"[GameClient] 清理待处理请求: 已完成={cleanedCount}, 超时={timedOutCount}");
             }
 
             // 如果待处理请求数量过多，记录警告

@@ -1,5 +1,6 @@
 using System;
 using Pisces.Client.Network.Channel;
+using Pisces.Client.Utils;
 
 namespace Pisces.Client.Network
 {
@@ -85,9 +86,9 @@ namespace Pisces.Client.Network
         #endregion
 
         /// <summary>
-        /// 是否启用日志
+        /// 日志级别（默认 Info）
         /// </summary>
-        public bool EnableLog = true;
+        public GameLogLevel LogLevel = GameLogLevel.Info;
 
         #region 流量控制
 
@@ -144,7 +145,7 @@ namespace Pisces.Client.Network
                 SendBufferSize = SendBufferSize,
                 PacketBufferInitialSize = PacketBufferInitialSize,
                 PacketBufferShrinkThreshold = PacketBufferShrinkThreshold,
-                EnableLog = EnableLog,
+                LogLevel = LogLevel,
                 EnableRateLimit = EnableRateLimit,
                 MaxSendRate = MaxSendRate,
                 MaxBurstSize = MaxBurstSize,

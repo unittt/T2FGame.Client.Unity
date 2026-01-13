@@ -100,7 +100,7 @@ namespace Pisces.Client.Network.Channel
             };
             _receiveThread.Start();
 
-            GameLogger.Log($"[{ChannelType}Channel] 初始化完成");
+            GameLogger.LogDebug($"[{ChannelType}Channel] 初始化完成");
         }
 
         private void ReceiveThreadLoop()
@@ -287,7 +287,7 @@ namespace Pisces.Client.Network.Channel
                 Client = null;
 
                 MainThreadDispatcher.InvokeOnMainThread(() => DisconnectServerEvent?.Invoke(this));
-                GameLogger.Log($"[{ChannelType}Channel] 已断开连接");
+                GameLogger.LogDebug($"[{ChannelType}Channel] 已断开连接");
             }
         }
 
@@ -360,7 +360,7 @@ namespace Pisces.Client.Network.Channel
                 while (_sendQueue.TryDequeue(out _)) { }
             }
 
-            GameLogger.Log($"[{ChannelType}Channel] 已释放");
+            GameLogger.LogDebug($"[{ChannelType}Channel] 已释放");
         }
 
         ~ProtocolChannelBase()

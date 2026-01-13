@@ -122,7 +122,7 @@ namespace Pisces.Client.Sdk
             if (settings != null)
             {
                 options = settings.ToGameClientOptions();
-                GameLogger.Log($"[PiscesSdk] 从 Project Settings 加载配置: {settings.ActiveEnvironment.Name} ({settings.ActiveEnvironment.Host}:{settings.ActiveEnvironment.Port})");
+                GameLogger.LogDebug($"[PiscesSdk] 加载配置: {settings.ActiveEnvironment.Name} ({settings.ActiveEnvironment.Host}:{settings.ActiveEnvironment.Port})");
             }
             else
             {
@@ -548,7 +548,7 @@ namespace Pisces.Client.Sdk
                 _initialized = false;
             }
 
-            GameLogger.Log("[PiscesSdk] SDK 已释放");
+            GameLogger.LogDebug("[PiscesSdk] SDK 已释放");
         }
         
         /// <summary>

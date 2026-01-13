@@ -31,7 +31,7 @@
 
 ## 项目简介
 
-Pisces Client SDK 是一个专为 Unity 游戏开发设计的**轻量、高性能**的网络通信框架。基于 **Protobuf 协议**，提供完整的客户端网络功能。
+Pisces Client SDK 是专为 Unity 设计的**高性能网络通信框架**。基于 **UniTask + Protobuf**，支持 TCP/UDP/WebSocket 多协议，提供心跳保活、自动重连、时间同步等开箱即用的功能。
 
 | 特性 | 说明 |
 |------|------|
@@ -529,7 +529,7 @@ public interface IProtocolChannel : IDisposable
 | `SendBufferSize` | `int` | `65536` | Socket 发送缓冲区 |
 | `PacketBufferInitialSize` | `int` | `4096` | PacketBuffer 初始大小 |
 | `PacketBufferShrinkThreshold` | `int` | `65536` | PacketBuffer 收缩阈值 |
-| `EnableLog` | `bool` | `true` | 启用日志 |
+| `LogLevel` | `GameLogLevel` | `Info` | 日志级别（Off 关闭所有日志） |
 | `EnableRateLimit` | `bool` | `true` | 启用发送限流 |
 | `MaxSendRate` | `int` | `100` | 每秒最大发送消息数 |
 | `MaxBurstSize` | `int` | `50` | 最大突发消息数 |
@@ -644,7 +644,9 @@ TimeUtils.GetLocalTimeMs()  // 本地时间戳
 
 ## 协议规范
 
-服务器只需适配 [`pisces_common.proto`](Proto/pisces_common.proto) 即可与客户端通信。
+本节定义客户端与服务器之间的通信协议。完整协议文件：[`pisces_common.proto`](Proto/pisces_common.proto)
+
+> 如需了解服务器端实现细节，请参阅 [服务器对接](#服务器对接) 章节。
 
 ### 核心消息
 
@@ -979,18 +981,31 @@ await sdk.ConnectAsync("192.168.1.100", 10100); // 重连
 - 检查服务器 CORS 配置
 - 确保已添加 `ENABLE_WEBSOCKET` 宏
 
-**Q: Unity 编辑器退出时报错？**
-
-SDK 已自动处理 Unity 生命周期。`PiscesLifecycleManager` 会在退出 Play Mode 时自动清理资源。
-
 **Q: 如何自定义日志？**
 ```csharp
-// 禁用日志
-GameLogger.Enabled = false;
+// 关闭所有日志
+GameLogger.Level = GameLogLevel.Off;
 
-// 或实现自定义 ILog
-GameLogger.Logger = new MyCustomLogger();
+// 只输出 Warning 及以上
+GameLogger.Level = GameLogLevel.Warning;
+
+// 开发调试时查看所有细节
+GameLogger.Level = GameLogLevel.Verbose;
+
+// 自定义日志实现
+GameLogger.SetLog(new MyCustomLogger());
 ```
+
+**日志级别说明：**
+
+| 级别 | 说明 | 使用场景 |
+|------|------|----------|
+| `GameLogLevel.Verbose` | 消息收发细节、序列化数据 | 深度调试 |
+| `GameLogLevel.Debug` | 状态变化、连接事件 | 开发调试 |
+| `GameLogLevel.Info` | 连接成功、断开等关键节点（默认） | 日常开发 |
+| `GameLogLevel.Warning` | 重连、超时等 | 测试环境 |
+| `GameLogLevel.Error` | 异常、失败 | 生产环境 |
+| `GameLogLevel.Off` | 关闭所有日志 | 性能测试 |
 
 **Q: 如何获取服务器时间？**
 ```csharp
@@ -1011,15 +1026,23 @@ if (TimeUtils.IsSynced)
 
 ```
 Pisces.Client.Unity/
-├── Editor/
+├── Editor/                             # 编辑器工具
 │   ├── PiscesMenuItems.cs              # 菜单项
 │   ├── PiscesNetworkMonitor.cs         # 网络监控窗口
 │   └── Settings/
 │       └── PiscesSettingsProvider.cs   # Project Settings 面板（含自动宏管理）
+├── Plugins/                            # 第三方插件
+│   └── Google.Protobuf/                # Protobuf 运行时库
+│       ├── Google.Protobuf.dll         # Protobuf 核心库
+│       ├── Google.Protobuf.xml         # XML 文档
+│       ├── System.Buffers.dll          # 缓冲区支持
+│       ├── System.Memory.dll           # 内存操作支持
+│       └── System.Runtime.CompilerServices.Unsafe.dll  # 底层内存操作
 ├── Proto/
 │   └── pisces_common.proto             # 协议定义
 ├── Runtime/
-│   ├── Assembly/                       # 程序集相关
+│   ├── Assembly/                       # 程序集信息
+│   │   └── AssemblyInfo.cs             # 程序集元数据
 │   ├── Network/
 │   │   ├── Channel/                    # 传输通道
 │   │   │   ├── IProtocolChannel.cs     # 通道接口（含 IDisposable）
@@ -1045,27 +1068,41 @@ Pisces.Client.Unity/
 │   │       ├── PacketCodec.cs          # 编解码器
 │   │       └── SendResult.cs           # 发送结果枚举
 │   ├── Protocol/                       # 协议相关
+│   │   ├── CmdKit.cs                   # 命令合并/拆分工具
+│   │   ├── CollectionConvertHelper.cs  # 集合类型转换助手
 │   │   ├── PiscesCommon.cs             # 生成的 Protobuf 类
-│   │   └── ...
+│   │   ├── PiscesCommonExtensions.cs   # Protobuf 类型扩展方法
+│   │   └── ProtoSerializer.cs          # Protobuf 序列化工具
 │   ├── Sdk/                            # SDK 层
 │   │   ├── PiscesSdk.cs                # SDK 入口（Facade）
+│   │   ├── PiscesException.cs          # SDK 异常定义
 │   │   ├── MsgIdManager.cs             # 消息 ID 管理
 │   │   ├── RequestCommand.cs           # 请求命令
-│   │   ├── RequestCommand.Factory.cs   # 请求命令工厂
+│   │   ├── RequestCommand.Factory.cs   # 请求命令工厂方法
 │   │   ├── ResponseMessage.cs          # 响应消息
-│   │   ├── ResponseMessage.Accessors.cs # 响应消息访问器
+│   │   ├── ResponseMessage.Accessors.cs # 响应消息数据访问器
 │   │   └── Managers/                   # 内部管理器
 │   │       ├── ConnectionManager.cs    # 连接管理（智能复用）
 │   │       ├── MessageRouter.cs        # 消息路由（异常隔离）
 │   │       └── RequestManager.cs       # 请求管理
-│   ├── Settings/
-│   │   └── PiscesSettings.cs           # 全局配置 ScriptableObject
-│   ├── Unity/
-│   │   └── PiscesLifecycleManager.cs   # Unity 生命周期
-│   └── Utils/
+│   ├── Settings/                       # 配置系统
+│   │   ├── PiscesSettings.cs           # 全局配置 ScriptableObject
+│   │   └── SettingsPaths.cs            # 配置文件路径常量
+│   ├── Unity/                          # Unity 集成
+│   │   └── PiscesLifecycleManager.cs   # Unity 生命周期管理
+│   └── Utils/                          # 工具类
+│       ├── MainThreadDispatcher.cs     # 主线程调度器
+│       ├── RateLimiter.cs              # 令牌桶限流器
 │       ├── TimeUtils.cs                # 时间同步工具
 │       ├── Log/                        # 日志系统
+│       │   ├── DefaultLog.cs           # 默认日志实现
+│       │   ├── GameLogger.cs           # 游戏日志门面
+│       │   ├── GameLogLevel.cs         # 日志级别枚举
+│       │   └── ILog.cs                 # 日志接口
 │       └── Pool/                       # 对象池
+│           ├── IPoolable.cs            # 可池化对象接口
+│           └── ReferencePool.cs        # 引用对象池
+├── LICENSE                             # MIT 许可证
 ├── package.json
 └── README.md
 ```

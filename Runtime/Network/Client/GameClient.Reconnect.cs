@@ -57,7 +57,7 @@ namespace Pisces.Client.Network
             {
                 if (_isReconnecting)
                 {
-                    GameLogger.Log("[GameClient] 已在重连中，跳过");
+                    GameLogger.LogDebug("[GameClient] 已在重连中，跳过");
                     return;
                 }
                 _isReconnecting = true;

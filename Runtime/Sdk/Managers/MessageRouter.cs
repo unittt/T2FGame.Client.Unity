@@ -48,7 +48,7 @@ namespace Pisces.Client.Sdk
                 _routes[cmdMerge] = handler;
             }
 
-            GameLogger.Log($"[MessageRouter] 已订阅 cmdMerge: {cmdMerge}");
+            GameLogger.LogVerbose($"[MessageRouter] 订阅 cmdMerge: {cmdMerge}");
 
             return new Subscription(this, cmdMerge, handler);
         }
@@ -141,7 +141,7 @@ namespace Pisces.Client.Sdk
                 _routes[cmdMerge] = updated;
             }
 
-            GameLogger.Log($"[MessageRouter] 已取消订阅 cmdMerge: {cmdMerge}");
+            GameLogger.LogVerbose($"[MessageRouter] 取消订阅 cmdMerge: {cmdMerge}");
         }
 
         #endregion
@@ -202,7 +202,7 @@ namespace Pisces.Client.Sdk
         public void Clear(int cmdMerge)
         {
             _routes.Remove(cmdMerge);
-            GameLogger.Log($"[MessageRouter] 已清除 cmdMerge 的所有订阅: {cmdMerge}");
+            GameLogger.LogDebug($"[MessageRouter] 清除 cmdMerge 订阅: {cmdMerge}");
         }
 
         /// <summary>
@@ -211,7 +211,7 @@ namespace Pisces.Client.Sdk
         public void ClearAll()
         {
             _routes.Clear();
-            GameLogger.Log("[MessageRouter] 已清除所有订阅");
+            GameLogger.LogDebug("[MessageRouter] 清除所有订阅");
         }
 
         #endregion

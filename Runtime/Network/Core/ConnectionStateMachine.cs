@@ -199,7 +199,7 @@ namespace Pisces.Client.Network.Core
 
                 if (previousState != ConnectionState.Disconnected)
                 {
-                    GameLogger.Log($"[StateMachine] 重置: {previousState} -> Disconnected");
+                    GameLogger.LogDebug($"[StateMachine] 重置: {previousState} -> Disconnected");
                     OnStateChanged?.Invoke(previousState, ConnectionState.Disconnected);
                 }
             }

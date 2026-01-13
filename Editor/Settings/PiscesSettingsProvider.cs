@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Pisces.Client.Network.Channel;
 using Pisces.Client.Settings;
+using Pisces.Client.Utils;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEngine;
@@ -36,7 +37,7 @@ namespace Pisces.Client.Editor.Settings
         private SerializedProperty _enableRateLimit;
         private SerializedProperty _maxSendRate;
         private SerializedProperty _maxBurstSize;
-        private SerializedProperty _enableLog;
+        private SerializedProperty _logLevel;
         private SerializedProperty _useWorkerThread;
 
         // Foldout States
@@ -95,7 +96,7 @@ namespace Pisces.Client.Editor.Settings
             _enableRateLimit = _serializedSettings.FindProperty("_enableRateLimit");
             _maxSendRate = _serializedSettings.FindProperty("_maxSendRate");
             _maxBurstSize = _serializedSettings.FindProperty("_maxBurstSize");
-            _enableLog = _serializedSettings.FindProperty("_enableLog");
+            _logLevel = _serializedSettings.FindProperty("_logLevel");
             _useWorkerThread = _serializedSettings.FindProperty("_useWorkerThread");
         }
 
@@ -497,8 +498,28 @@ namespace Pisces.Client.Editor.Settings
             {
                 EditorGUI.indentLevel++;
 
-                EditorGUILayout.PropertyField(_enableLog, new GUIContent("启用日志",
-                    "在控制台输出网络日志"));
+                // 日志级别下拉选择
+                EditorGUILayout.PropertyField(_logLevel, new GUIContent("日志级别",
+                    "控制日志输出的详细程度（Off 关闭所有日志）"));
+
+                // 显示日志级别说明
+                var currentLevel = (GameLogLevel)_logLevel.enumValueIndex;
+                var levelDescription = currentLevel switch
+                {
+                    GameLogLevel.Verbose => "输出所有日志（包括消息收发细节）",
+                    GameLogLevel.Debug => "输出调试及以上级别日志",
+                    GameLogLevel.Info => "输出信息及以上级别日志（默认）",
+                    GameLogLevel.Warning => "仅输出警告和错误",
+                    GameLogLevel.Error => "仅输出错误",
+                    GameLogLevel.Off => "关闭所有日志输出",
+                    _ => ""
+                };
+                if (!string.IsNullOrEmpty(levelDescription))
+                {
+                    EditorGUILayout.HelpBox(levelDescription, MessageType.None);
+                }
+
+                EditorGUILayout.Space(5);
 
                 EditorGUILayout.PropertyField(_useWorkerThread, new GUIContent("使用工作线程",
                     "在独立线程处理网络 I/O（WebGL 不支持）"));

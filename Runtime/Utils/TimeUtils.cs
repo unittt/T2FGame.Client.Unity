@@ -67,7 +67,7 @@ namespace Pisces.Client.Utils
             _clockOffsetMs = offset;
             _synced = true;
 
-            GameLogger.Log($"[TimeUtils] 时间同步完成: RTT={rtt}ms, ClockOffset={offset}ms");
+            GameLogger.LogDebug($"[TimeUtils] 时间同步完成: RTT={rtt}ms, ClockOffset={offset}ms");
         }
 
         /// <summary>

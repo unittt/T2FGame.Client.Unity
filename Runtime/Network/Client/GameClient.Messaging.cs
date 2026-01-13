@@ -46,7 +46,7 @@ namespace Pisces.Client.Network
             if (_options.EnableRateLimit && _options.MaxSendRate > 0)
             {
                 _rateLimiter = new RateLimiter(_options.MaxBurstSize, _options.MaxSendRate);
-                GameLogger.Log($"[GameClient] 限流器已启用: 速率={_options.MaxSendRate}/s, 突发={_options.MaxBurstSize}");
+                GameLogger.LogDebug($"[GameClient] 限流器已启用: 速率={_options.MaxSendRate}/s, 突发={_options.MaxBurstSize}");
             }
         }
 
@@ -295,7 +295,7 @@ namespace Pisces.Client.Network
                 // 心跳响应，重置超时计数
                 _heartbeatTimeoutCount = 0;
                 _statistics.RecordHeartbeatReceive();
-                GameLogger.Log("[GameClient] 收到心跳响应");
+                GameLogger.LogVerbose("[GameClient] 收到心跳响应");
                 return;
             }
 
@@ -351,7 +351,7 @@ namespace Pisces.Client.Network
             if (!IsReconnectAllowed(disconnectNotify.Reason))
             {
                 // 禁止重连的情况，直接关闭客户端
-                GameLogger.Log($"[GameClient] 断线原因 {disconnectNotify.Reason} 不允许重连，关闭客户端");
+                GameLogger.LogDebug($"[GameClient] 断线原因 {disconnectNotify.Reason} 不允许重连，关闭客户端");
                 Close();
             }
             else

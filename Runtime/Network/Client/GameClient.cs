@@ -52,7 +52,7 @@ namespace Pisces.Client.Network
             _options = options?.Clone() ?? new GameClientOptions();
             _statistics = new NetworkStatistics();
             _stateMachine = new ConnectionStateMachine();
-            GameLogger.Enabled = _options.EnableLog;
+            GameLogger.Level = _options.LogLevel;
 
             // 初始化消息模块
             InitMessaging();
@@ -264,7 +264,7 @@ namespace Pisces.Client.Network
 
             _isClosed = true;
             CleanupConnection(ConnectionState.Closed, "客户端已关闭");
-            GameLogger.Log("[GameClient] 已关闭");
+            GameLogger.LogDebug("[GameClient] 已关闭");
         }
 
         private void OnChannelDisconnect(IProtocolChannel channel)
@@ -328,7 +328,7 @@ namespace Pisces.Client.Network
                 }
             }
 
-            GameLogger.Log("[GameClient] 已释放");
+            GameLogger.LogDebug("[GameClient] 已释放");
         }
 
         ~GameClient()

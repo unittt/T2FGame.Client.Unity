@@ -39,7 +39,7 @@ namespace Pisces.Client.Network.Channel
         public void OnInit()
         {
             _isDisposed = false;
-            GameLogger.Log("[WebSocketChannel] 初始化完成");
+            GameLogger.LogDebug("[WebSocketChannel] 初始化完成");
         }
 
         public void Connect(string host, int port)
@@ -89,7 +89,7 @@ namespace Pisces.Client.Network.Channel
                 _socket.OnError += OnError;
                 _socket.ConnectAsync();
 
-                GameLogger.Log($"[WebSocketChannel] 正在连接到 {wsUrl}");
+                GameLogger.LogDebug($"[WebSocketChannel] 正在连接到 {wsUrl}");
             }
             catch (Exception ex)
             {
@@ -125,7 +125,7 @@ namespace Pisces.Client.Network.Channel
             {
                 CleanupSocket();
                 DisconnectServerEvent?.Invoke(this);
-                GameLogger.Log("[WebSocketChannel] 已断开连接");
+                GameLogger.LogDebug("[WebSocketChannel] 已断开连接");
             }
         }
 
@@ -196,7 +196,7 @@ namespace Pisces.Client.Network.Channel
             IsConnected = false;
             _isConnecting = false;
 
-            GameLogger.Log($"[WebSocketChannel] 已关闭: Code={e.Code}, Reason={e.Reason}");
+            GameLogger.LogDebug($"[WebSocketChannel] 已关闭: Code={e.Code}, Reason={e.Reason}");
 
             if (wasConnected)
             {
@@ -279,7 +279,7 @@ namespace Pisces.Client.Network.Channel
                 Disconnect();
             }
 
-            GameLogger.Log("[WebSocketChannel] 已释放");
+            GameLogger.LogDebug("[WebSocketChannel] 已释放");
         }
 
         ~WebSocketChannel()

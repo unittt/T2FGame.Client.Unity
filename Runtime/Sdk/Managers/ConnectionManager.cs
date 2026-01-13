@@ -92,7 +92,7 @@ namespace Pisces.Client.Sdk
                     ConnectionState.Connecting or 
                     ConnectionState.Reconnecting)
                 {
-                    GameLogger.Log($"[ConnectionManager] 已连接或正在连接到 {host}:{port}，跳过");
+                    GameLogger.LogDebug($"[ConnectionManager] 已连接到 {host}:{port}，跳过");
                     return;
                 }
             }
@@ -179,7 +179,7 @@ namespace Pisces.Client.Sdk
                 _client = null;
             }
 
-            GameLogger.Log("[ConnectionManager] 已释放");
+            GameLogger.LogDebug("[ConnectionManager] 已释放");
         }
     }
 }

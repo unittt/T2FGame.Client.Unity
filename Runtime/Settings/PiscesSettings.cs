@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Pisces.Client.Network.Channel;
 using Pisces.Client.Network;
+using Pisces.Client.Utils;
 using UnityEngine;
 
 namespace Pisces.Client.Settings
@@ -340,21 +341,21 @@ namespace Pisces.Client.Settings
         #region Debug Settings
 
         [Header("Debug Settings")]
-        [Tooltip("是否启用日志输出")]
+        [Tooltip("日志级别")]
         [SerializeField]
-        private bool _enableLog = true;
+        private GameLogLevel _logLevel = GameLogLevel.Info;
 
         [Tooltip("是否使用工作线程进行网络收发（WebGL/微信小游戏不支持）")]
         [SerializeField]
         private bool _useWorkerThread = true;
 
         /// <summary>
-        /// 是否启用日志
+        /// 日志级别
         /// </summary>
-        public bool EnableLog
+        public GameLogLevel LogLevel
         {
-            get => _enableLog;
-            set => _enableLog = value;
+            get => _logLevel;
+            set => _logLevel = value;
         }
 
         /// <summary>
@@ -395,7 +396,7 @@ namespace Pisces.Client.Settings
                 EnableRateLimit = _enableRateLimit,
                 MaxSendRate = _maxSendRate,
                 MaxBurstSize = _maxBurstSize,
-                EnableLog = _enableLog,
+                LogLevel = _logLevel,
                 UseWorkerThread = GetEffectiveUseWorkerThread()
             };
         }
@@ -443,7 +444,7 @@ namespace Pisces.Client.Settings
             _maxSendRate = 100;
             _maxBurstSize = 50;
 
-            _enableLog = true;
+            _logLevel = GameLogLevel.Info;
             _useWorkerThread = true;
         }
 

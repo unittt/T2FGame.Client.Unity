@@ -68,7 +68,7 @@ namespace Pisces.Client.Network
                     var heartbeat = RequestCommand.Heartbeat();
                     SendRequest(heartbeat);
 
-                    GameLogger.Log($"[GameClient] 已发送心跳 (待确认: {_heartbeatTimeoutCount})");
+                    GameLogger.LogVerbose($"[GameClient] 发送心跳 (待确认: {_heartbeatTimeoutCount})");
                 }
                 catch (OperationCanceledException)
                 {

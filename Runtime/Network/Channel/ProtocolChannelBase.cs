@@ -14,9 +14,9 @@ namespace Pisces.Client.Network.Channel
     public abstract class ProtocolChannelBase : IProtocolChannel
     {
         /// <summary>
-        /// 默认接收缓冲区大小
+        /// 默认接收缓冲区大小 (64KB)
         /// </summary>
-        private const int DefaultReceiveBufferSize = 65536;
+        protected const int DefaultReceiveBufferSize = 65536;
 
         /// <summary>
         /// 线程休眠时间（毫秒）
@@ -26,6 +26,11 @@ namespace Pisces.Client.Network.Channel
         private volatile bool _isEnableThread;
         private volatile bool _isConnected;
         private volatile bool _isDisposed;
+        
+        /// <summary>
+        /// 接收缓冲区（复用以减少GC）
+        /// </summary>
+        protected readonly byte[] ReceiveBuffer = new byte[DefaultReceiveBufferSize];
 
         /// <summary>
         /// 设置连接状态（供子类使用）
@@ -48,11 +53,6 @@ namespace Pisces.Client.Network.Channel
         /// 用于通知发送线程有新数据
         /// </summary>
         private readonly AutoResetEvent _sendSignal = new(false);
-
-        /// <summary>
-        /// 同步上下文（用于回调到主线程）
-        /// </summary>
-        private SynchronizationContext _mainThreadContext;
 
         public abstract ChannelType ChannelType { get; }
 
@@ -78,18 +78,10 @@ namespace Pisces.Client.Network.Channel
         /// </summary>
         protected virtual ProtocolType Protocol => ProtocolType.Tcp;
 
-        /// <summary>
-        /// 接收缓冲区大小
-        /// </summary>
-        protected virtual int ReceiveBufferSize => DefaultReceiveBufferSize;
-
         public virtual void OnInit()
         {
             if (_isEnableThread)
                 return;
-
-            // 捕获主线程上下文
-            _mainThreadContext = SynchronizationContext.Current;
 
             _isEnableThread = true;
             _isDisposed = false;
@@ -128,7 +120,7 @@ namespace Pisces.Client.Network.Channel
                     if (data is { Length: > 0 })
                     {
                         // 触发接收事件
-                        InvokeOnMainThread(() => ReceiveMessageEvent?.Invoke(this, data));
+                        MainThreadDispatcher.InvokeOnMainThread(() => ReceiveMessageEvent?.Invoke(this, data));
                     }
                 }
                 catch (SocketException ex)
@@ -195,7 +187,7 @@ namespace Pisces.Client.Network.Channel
                         }
 
                         // 触发发送成功事件
-                        InvokeOnMainThread(() => SendMessageEvent?.Invoke(this));
+                        MainThreadDispatcher.InvokeOnMainThread(() => SendMessageEvent?.Invoke(this));
                     }
                 }
                 catch (SocketException ex)
@@ -235,8 +227,7 @@ namespace Pisces.Client.Network.Channel
                 Client?.Close();
 
                 // 解析主机地址（支持域名和 IP 地址）
-                IPAddress ipAddress;
-                if (!IPAddress.TryParse(host, out ipAddress))
+                if (!IPAddress.TryParse(host, out var ipAddress))
                 {
                     // 不是 IP 地址，尝试 DNS 解析
                     var addresses = Dns.GetHostAddresses(host);
@@ -253,8 +244,8 @@ namespace Pisces.Client.Network.Channel
                 var addressFamily = ipAddress.AddressFamily;
                 Client = new Socket(addressFamily, Way, Protocol)
                 {
-                    ReceiveBufferSize = ReceiveBufferSize,
-                    SendBufferSize = ReceiveBufferSize,
+                    ReceiveBufferSize = DefaultReceiveBufferSize,
+                    SendBufferSize = DefaultReceiveBufferSize,
                     NoDelay = true, // 禁用 Nagle 算法，减少延迟
                 };
 
@@ -295,7 +286,7 @@ namespace Pisces.Client.Network.Channel
                 Client.Close();
                 Client = null;
 
-                InvokeOnMainThread(() => DisconnectServerEvent?.Invoke(this));
+                MainThreadDispatcher.InvokeOnMainThread(() => DisconnectServerEvent?.Invoke(this));
                 GameLogger.Log($"[{ChannelType}Channel] 已断开连接");
             }
         }
@@ -305,21 +296,21 @@ namespace Pisces.Client.Network.Channel
             if (data == null || data.Length == 0)
             {
                 GameLogger.LogWarning($"[{ChannelType}Channel] 无法发送：数据无效");
-                InvokeOnMainThread(() => SendFailedEvent?.Invoke(this, data, SendFailureReason.InvalidData));
+                MainThreadDispatcher.InvokeOnMainThread(() => SendFailedEvent?.Invoke(this, data, SendFailureReason.InvalidData));
                 return false;
             }
 
             if (_isDisposed)
             {
                 GameLogger.LogWarning($"[{ChannelType}Channel] 无法发送：通道已关闭");
-                InvokeOnMainThread(() => SendFailedEvent?.Invoke(this, data, SendFailureReason.ChannelClosed));
+                MainThreadDispatcher.InvokeOnMainThread(() => SendFailedEvent?.Invoke(this, data, SendFailureReason.ChannelClosed));
                 return false;
             }
 
             if (!IsConnected)
             {
                 GameLogger.LogWarning($"[{ChannelType}Channel] 无法发送：未连接");
-                InvokeOnMainThread(() => SendFailedEvent?.Invoke(this, data, SendFailureReason.NotConnected));
+                MainThreadDispatcher.InvokeOnMainThread(() => SendFailedEvent?.Invoke(this, data, SendFailureReason.NotConnected));
                 return false;
             }
 
@@ -337,26 +328,7 @@ namespace Pisces.Client.Network.Channel
                 return;
 
             _isConnected = false;
-            InvokeOnMainThread(() => DisconnectServerEvent?.Invoke(this));
-        }
-
-        /// <summary>
-        /// 在主线程上执行回调
-        /// </summary>
-        private void InvokeOnMainThread(Action action)
-        {
-            if (action == null)
-                return;
-
-            if (_mainThreadContext != null)
-            {
-                _mainThreadContext.Post(_ => action(), null);
-            }
-            else
-            {
-                // 如果没有同步上下文，直接执行
-                action();
-            }
+            MainThreadDispatcher.InvokeOnMainThread(() => DisconnectServerEvent?.Invoke(this));
         }
 
         public void Dispose()
@@ -365,7 +337,7 @@ namespace Pisces.Client.Network.Channel
             GC.SuppressFinalize(this);
         }
 
-        protected virtual void Dispose(bool disposing)
+        private void Dispose(bool disposing)
         {
             if (_isDisposed)
                 return;

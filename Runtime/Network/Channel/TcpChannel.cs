@@ -10,23 +10,11 @@ namespace Pisces.Client.Network.Channel
     /// </summary>
     public class TcpChannel : ProtocolChannelBase
     {
-        /// <summary>
-        /// 接收缓冲区大小 (64KB)
-        /// </summary>
-        private const int TcpReceiveBufferSize = 65536;
-
-        /// <summary>
-        /// 接收缓冲区（复用以减少GC）
-        /// </summary>
-        private readonly byte[] _receiveBuffer = new byte[TcpReceiveBufferSize];
-
         public override ChannelType ChannelType => ChannelType.Tcp;
 
         protected override SocketType Way => SocketType.Stream;
 
         protected override ProtocolType Protocol => ProtocolType.Tcp;
-
-        protected override int ReceiveBufferSize => TcpReceiveBufferSize;
 
         /// <summary>
         /// 接收消息
@@ -51,9 +39,9 @@ namespace Pisces.Client.Network.Channel
 
             // 读取可用数据
             var bytesRead = client.Receive(
-                _receiveBuffer,
+                ReceiveBuffer,
                 0,
-                _receiveBuffer.Length,
+                ReceiveBuffer.Length,
                 SocketFlags.None
             );
 
@@ -65,7 +53,7 @@ namespace Pisces.Client.Network.Channel
 
             // 返回读取到的原始字节
             var result = new byte[bytesRead];
-            Buffer.BlockCopy(_receiveBuffer, 0, result, 0, bytesRead);
+            Buffer.BlockCopy(ReceiveBuffer, 0, result, 0, bytesRead);
             return result;
         }
     }

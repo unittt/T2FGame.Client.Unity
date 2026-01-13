@@ -37,7 +37,7 @@ namespace Pisces.Protocol
         private static string DefaultFormatter(int cmd, int subCmd, int mergedCmd)
         {
             _sb.Clear();
-            _sb.Append(cmd).Append(cmd).Append('-')
+            _sb.Append(cmd).Append('-')
                 .Append(subCmd).Append('-')
                 .Append(mergedCmd);
 

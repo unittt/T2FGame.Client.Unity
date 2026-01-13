@@ -1,0 +1,109 @@
+name: Bug Report
+description: Report a bug or issue
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the information below.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+      placeholder: Describe the bug...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior
+      placeholder: |
+        1. Initialize SDK with '...'
+        2. Connect to '...'
+        3. Send message '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What you expected to happen
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / Error Messages
+      description: Please paste any relevant log output or error messages
+      render: shell
+
+  - type: dropdown
+    id: unity-version
+    attributes:
+      label: Unity Version
+      description: What version of Unity are you using?
+      options:
+        - "2022.3.x LTS"
+        - "2023.1.x"
+        - "2023.2.x"
+        - "6000.x (Unity 6)"
+        - Other (please specify in description)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Target Platform
+      description: What platform are you building for?
+      multiple: true
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - Android
+        - iOS
+        - WebGL
+        - Other
+
+  - type: input
+    id: sdk-version
+    attributes:
+      label: SDK Version
+      description: What version of Pisces Client SDK are you using?
+      placeholder: "e.g., 0.0.1"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: channel-type
+    attributes:
+      label: Channel Type
+      description: What network channel are you using?
+      options:
+        - TCP
+        - UDP
+        - WebSocket
+        - Not applicable
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context about the problem here

@@ -1,0 +1,267 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 1.0.0)'
+        required: true
+        type: string
+      prerelease:
+        description: 'Is this a pre-release?'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    name: Validate Release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
+      tag: ${{ steps.get-version.outputs.tag }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get Version
+        id: get-version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+            TAG="v$VERSION"
+          else
+            TAG="${{ github.ref_name }}"
+            VERSION="${TAG#v}"
+          fi
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "Release version: $VERSION"
+          echo "Release tag: $TAG"
+
+      - name: Validate Version Format
+        run: |
+          VERSION="${{ steps.get-version.outputs.version }}"
+          if ! [[ $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
+            echo "::error::Invalid version format: $VERSION"
+            echo "Expected format: X.Y.Z or X.Y.Z-suffix"
+            exit 1
+          fi
+
+      - name: Check package.json Version
+        run: |
+          PACKAGE_VERSION=$(jq -r '.version' package.json)
+          RELEASE_VERSION="${{ steps.get-version.outputs.version }}"
+
+          echo "Package version: $PACKAGE_VERSION"
+          echo "Release version: $RELEASE_VERSION"
+
+          if [ "$PACKAGE_VERSION" != "$RELEASE_VERSION" ]; then
+            echo "::warning::package.json version ($PACKAGE_VERSION) does not match release version ($RELEASE_VERSION)"
+            echo "Consider updating package.json before releasing."
+          fi
+
+  build-and-test:
+    name: Build and Test
+    needs: validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate Package Structure
+        run: |
+          echo "Validating package structure..."
+
+          # Check required files
+          REQUIRED_FILES=("package.json" "README.md" "LICENSE")
+          for file in "${REQUIRED_FILES[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "::error::Missing required file: $file"
+              exit 1
+            fi
+          done
+
+          # Check Runtime folder exists
+          if [ ! -d "Runtime" ]; then
+            echo "::error::Missing Runtime folder"
+            exit 1
+          fi
+
+          echo "Package structure is valid!"
+
+      - name: Generate Changelog
+        id: changelog
+        run: |
+          echo "Generating changelog..."
+
+          # Get previous tag
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          if [ -n "$PREV_TAG" ]; then
+            echo "Previous tag: $PREV_TAG"
+            CHANGELOG=$(git log $PREV_TAG..HEAD --pretty=format:"- %s (%h)" --no-merges)
+          else
+            echo "No previous tag found, using all commits"
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges -20)
+          fi
+
+          # Save to file for release notes
+          echo "$CHANGELOG" > CHANGELOG_RELEASE.md
+
+          echo "Changelog generated:"
+          cat CHANGELOG_RELEASE.md
+
+  release:
+    name: Create Release
+    needs: [validate, build-and-test]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate Release Notes
+        id: release-notes
+        run: |
+          VERSION="${{ needs.validate.outputs.version }}"
+
+          # Get previous tag for changelog
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          cat > RELEASE_NOTES.md << EOF
+          # Pisces Client SDK v$VERSION
+
+          ## Installation
+
+          ### Via Unity Package Manager (Git URL)
+
+          Add the following to your \`Packages/manifest.json\`:
+
+          \`\`\`json
+          {
+            "dependencies": {
+              "com.pisces.client": "https://github.com/PiscesGameDev/Pisces.Client.Unity.git#${{ needs.validate.outputs.tag }}"
+            }
+          }
+          \`\`\`
+
+          ### Via OpenUPM
+
+          \`\`\`bash
+          openupm add com.pisces.client
+          \`\`\`
+
+          ## Changes
+
+          EOF
+
+          # Add changelog
+          if [ -n "$PREV_TAG" ]; then
+            git log $PREV_TAG..HEAD --pretty=format:"- %s (%h)" --no-merges >> RELEASE_NOTES.md
+          else
+            git log --pretty=format:"- %s (%h)" --no-merges -20 >> RELEASE_NOTES.md
+          fi
+
+          cat >> RELEASE_NOTES.md << EOF
+
+          ## Requirements
+
+          - Unity 2022.3 or later
+          - .NET Standard 2.1
+
+          ## Dependencies
+
+          - [UniTask](https://github.com/Cysharp/UniTask)
+          - [UnityWebSocket](https://github.com/psygames/UnityWebSocket) (optional, for WebSocket support)
+
+          ---
+
+          **Full Changelog**: https://github.com/PiscesGameDev/Pisces.Client.Unity/compare/$PREV_TAG...${{ needs.validate.outputs.tag }}
+          EOF
+
+          echo "Release notes generated"
+
+      - name: Create Tag (if manual dispatch)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          TAG="${{ needs.validate.outputs.tag }}"
+
+          # Check if tag already exists
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git tag -a "$TAG" -m "Release $TAG"
+            git push origin "$TAG"
+            echo "Created and pushed tag: $TAG"
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.validate.outputs.tag }}
+          name: v${{ needs.validate.outputs.version }}
+          body_path: RELEASE_NOTES.md
+          draft: false
+          prerelease: ${{ github.event.inputs.prerelease || false }}
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update package.json Version
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          VERSION="${{ needs.validate.outputs.version }}"
+          CURRENT_VERSION=$(jq -r '.version' package.json)
+
+          if [ "$CURRENT_VERSION" != "$VERSION" ]; then
+            echo "Updating package.json version from $CURRENT_VERSION to $VERSION"
+            jq ".version = \"$VERSION\"" package.json > package.json.tmp
+            mv package.json.tmp package.json
+
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add package.json
+            git commit -m "chore: bump version to $VERSION"
+            git push origin HEAD:main
+          fi
+
+  notify:
+    name: Notify
+    needs: [validate, release]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Release Summary
+        run: |
+          echo "## Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: ${{ needs.validate.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tag**: ${{ needs.validate.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: ${{ needs.release.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Installation" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
+          echo "{" >> $GITHUB_STEP_SUMMARY
+          echo "  \"dependencies\": {" >> $GITHUB_STEP_SUMMARY
+          echo "    \"com.pisces.client\": \"https://github.com/PiscesGameDev/Pisces.Client.Unity.git#${{ needs.validate.outputs.tag }}\"" >> $GITHUB_STEP_SUMMARY
+          echo "  }" >> $GITHUB_STEP_SUMMARY
+          echo "}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY

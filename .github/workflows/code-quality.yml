@@ -1,0 +1,179 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - '**.cs'
+      - '.editorconfig'
+      - '.github/workflows/code-quality.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - '**.cs'
+      - '.editorconfig'
+      - '.github/workflows/code-quality.yml'
+  workflow_dispatch:
+
+jobs:
+  format-check:
+    name: Format Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      # Create a minimal .csproj for dotnet format to work
+      - name: Setup Project
+        run: |
+          cat > Pisces.Client.csproj << 'EOF'
+          <Project Sdk="Microsoft.NET.Sdk">
+            <PropertyGroup>
+              <TargetFramework>netstandard2.1</TargetFramework>
+              <LangVersion>9.0</LangVersion>
+              <Nullable>disable</Nullable>
+              <NoWarn>CS0649;CS0169</NoWarn>
+            </PropertyGroup>
+            <ItemGroup>
+              <Compile Include="Runtime/**/*.cs" />
+              <Compile Include="Editor/**/*.cs" />
+            </ItemGroup>
+          </Project>
+          EOF
+
+      - name: Check Code Formatting
+        run: |
+          dotnet format Pisces.Client.csproj --verify-no-changes --verbosity diagnostic
+        continue-on-error: true
+        id: format-check
+
+      - name: Format Check Result
+        if: steps.format-check.outcome == 'failure'
+        run: |
+          echo "::warning::Code formatting issues detected. Run 'dotnet format' locally to fix."
+          echo ""
+          echo "To fix formatting issues locally:"
+          echo "  1. Install .NET SDK 8.0+"
+          echo "  2. Run: dotnet format Pisces.Client.csproj"
+          echo "  3. Commit the changes"
+
+  # Static analysis using .NET analyzers
+  analyze:
+    name: Static Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Create Analysis Project
+        run: |
+          cat > Pisces.Client.Analysis.csproj << 'EOF'
+          <Project Sdk="Microsoft.NET.Sdk">
+            <PropertyGroup>
+              <TargetFramework>netstandard2.1</TargetFramework>
+              <LangVersion>9.0</LangVersion>
+              <Nullable>disable</Nullable>
+              <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+              <NoWarn>CS0649;CS0169;CS0067;CS8632</NoWarn>
+              <EnableNETAnalyzers>true</EnableNETAnalyzers>
+              <AnalysisLevel>latest</AnalysisLevel>
+              <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+            </PropertyGroup>
+            <ItemGroup>
+              <Compile Include="Runtime/**/*.cs" />
+              <Compile Include="Editor/**/*.cs" />
+            </ItemGroup>
+            <!-- Unity stub references -->
+            <ItemGroup>
+              <PackageReference Include="Unity3D.SDK" Version="2022.3.0" />
+            </ItemGroup>
+          </Project>
+          EOF
+
+      - name: Run Analysis
+        run: |
+          dotnet build Pisces.Client.Analysis.csproj -c Release --no-restore 2>&1 | tee build.log || true
+
+          # Check for errors (not warnings)
+          if grep -q ": error " build.log; then
+            echo "::error::Build errors detected"
+            grep ": error " build.log
+            exit 1
+          fi
+
+          # Report warnings
+          if grep -q ": warning " build.log; then
+            echo "::warning::Build warnings detected"
+            grep ": warning " build.log | head -20
+          fi
+        continue-on-error: true
+
+  # Check for common code issues
+  code-check:
+    name: Code Standards Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check for TODO/FIXME comments
+        run: |
+          echo "Checking for TODO/FIXME comments..."
+          TODOS=$(grep -rn "TODO\|FIXME\|HACK\|XXX" --include="*.cs" . || true)
+          if [ -n "$TODOS" ]; then
+            echo "::notice::Found TODO/FIXME comments:"
+            echo "$TODOS" | head -20
+          else
+            echo "No TODO/FIXME comments found."
+          fi
+
+      - name: Check for Debug.Log in Release code
+        run: |
+          echo "Checking for Debug.Log statements..."
+          # Check Runtime folder (should use GameLogger instead)
+          DEBUG_LOGS=$(grep -rn "Debug\.Log\|Debug\.LogWarning\|Debug\.LogError" --include="*.cs" Runtime/ || true)
+          if [ -n "$DEBUG_LOGS" ]; then
+            echo "::warning::Found Debug.Log statements in Runtime code (consider using GameLogger):"
+            echo "$DEBUG_LOGS"
+          else
+            echo "No Debug.Log statements found in Runtime code."
+          fi
+
+      - name: Check for Console.WriteLine
+        run: |
+          echo "Checking for Console.WriteLine..."
+          CONSOLE=$(grep -rn "Console\.Write" --include="*.cs" . || true)
+          if [ -n "$CONSOLE" ]; then
+            echo "::warning::Found Console.Write statements:"
+            echo "$CONSOLE"
+          fi
+
+      - name: Check file encodings
+        run: |
+          echo "Checking file encodings..."
+          # Find files that might not be UTF-8
+          find . -name "*.cs" -exec file {} \; | grep -v "UTF-8\|ASCII" | head -10 || echo "All files appear to be UTF-8/ASCII encoded."
+
+      - name: Check line endings
+        run: |
+          echo "Checking for CRLF line endings..."
+          CRLF_FILES=$(find . -name "*.cs" -exec grep -l $'\r' {} \; 2>/dev/null | head -10 || true)
+          if [ -n "$CRLF_FILES" ]; then
+            echo "::notice::Files with CRLF line endings (consider converting to LF):"
+            echo "$CRLF_FILES"
+          else
+            echo "All files use LF line endings."
+          fi

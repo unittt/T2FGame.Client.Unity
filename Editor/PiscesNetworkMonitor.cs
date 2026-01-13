@@ -23,7 +23,7 @@ namespace Pisces.Client.Editor
         private const double RepaintInterval = 0.1;
 
         // 缓存
-        private List<NetworkMessageLog> _cachedLogs = new();
+        private readonly List<NetworkMessageLog> _cachedLogs = new();
         private int _lastLogCount;
 
         // 样式系统
@@ -164,7 +164,7 @@ namespace Pisces.Client.Editor
 
                 if (stats.LogCount != _lastLogCount)
                 {
-                    _cachedLogs = stats.GetLogs(100);
+                    stats.GetLogs(_cachedLogs);
                     _lastLogCount = stats.LogCount;
                 }
 

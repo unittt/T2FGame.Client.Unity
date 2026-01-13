@@ -316,19 +316,18 @@ namespace Pisces.Client.Network.Core
             }
         }
 
-        public List<NetworkMessageLog> GetLogs(int maxCount = 100)
+        public void GetLogs(List<NetworkMessageLog> result, int maxCount = 100)
         {
             lock (_logLock)
             {
-                var result = new List<NetworkMessageLog>();
-                int count = 0;
+                result.Clear();
+                var count = 0;
                 foreach (var log in _messageLogs)
                 {
                     if (count >= maxCount) break;
                     result.Add(log);
                     count++;
                 }
-                return result;
             }
         }
 

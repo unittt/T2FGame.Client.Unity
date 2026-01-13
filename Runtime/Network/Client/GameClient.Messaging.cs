@@ -133,13 +133,15 @@ namespace Pisces.Client.Network
                 // 发送请求
                 var message = CreateExternalMessage(command);
                 var packet = PacketCodec.Encode(message);
-                // 记录统计
-                _statistics.RecordSend(packet.Length, command);
+                ReferencePool<ExternalMessage>.Despawn(message); // 编码后立即归还
 
                 if (!_channel.Send(packet))
                 {
                     throw new InvalidOperationException("通道发送失败");
                 }
+
+                // 记录统计
+                _statistics.RecordSend(packet.Length, command);
 
                 // 非业务消息不需要等待响应
                 if (pendingInfo == null)
@@ -212,6 +214,7 @@ namespace Pisces.Client.Network
 
                 var message = CreateExternalMessage(command);
                 var packet = PacketCodec.Encode(message);
+                ReferencePool<ExternalMessage>.Despawn(message); // 编码后立即归还
 
                 if (!_channel.Send(packet))
                 {
@@ -250,13 +253,12 @@ namespace Pisces.Client.Network
 
         private ExternalMessage CreateExternalMessage(RequestCommand command)
         {
-            return new ExternalMessage
-            {
-                MessageType = command.MessageType,
-                CmdMerge = command.CmdMerge,
-                MsgId = command.MsgId,
-                Data = command.Data,
-            };
+            var message = ReferencePool<ExternalMessage>.Spawn();
+            message.MessageType = command.MessageType;
+            message.CmdMerge = command.CmdMerge;
+            message.MsgId = command.MsgId;
+            message.Data = command.Data;
+            return message;
         }
 
         private void OnChannelReceiveMessage(IProtocolChannel channel, byte[] data)

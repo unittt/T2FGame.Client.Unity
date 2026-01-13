@@ -1,4 +1,3 @@
-
 using System.Collections.Generic;
 using Pisces.Client.Network;
 using Pisces.Client.Network.Core;
@@ -7,7 +6,6 @@ using Pisces.Client.Sdk;
 using Pisces.Client.Utils;
 using UnityEditor;
 using UnityEngine;
-using MessageType = Pisces.Protocol.MessageType;
 using Vector2 = UnityEngine.Vector2;
 
 namespace Pisces.Client.Editor
@@ -157,7 +155,7 @@ namespace Pisces.Client.Editor
             var client = PiscesSdk.Instance.Client;
             if (client == null)
             {
-                EditorGUILayout.HelpBox("客户端实例为空", UnityEditor.MessageType.Warning);
+                EditorGUILayout.HelpBox("客户端实例为空", MessageType.Warning);
                 return;
             }
 
@@ -195,7 +193,7 @@ namespace Pisces.Client.Editor
                 {
                     GUILayout.Label("网络监控", _headerStyle ?? EditorStyles.boldLabel);
                     EditorGUILayout.Space(10);
-                    EditorGUILayout.HelpBox("请在运行模式下使用此窗口", UnityEditor.MessageType.Info);
+                    EditorGUILayout.HelpBox("请在运行模式下使用此窗口", MessageType.Info);
 
                     EditorGUILayout.Space(10);
                     if (GUILayout.Button("打开设置", GUILayout.Width(100)))
@@ -532,11 +530,8 @@ namespace Pisces.Client.Editor
             var arrow = log.IsOutgoing ? "↑" : "↓";
             var timeStr = log.Timestamp.ToString("HH:mm:ss.fff");
 
-            // MessageType 标签
-            var typeStr = GetMessageTypeTag(log.MessageType);
-
-            // 命令显示（心跳等系统消息不显示命令码）
-            var cmdStr = log.MessageType == MessageType.Business ? $" {log.CmdDisplay}" : "";
+            // 命令显示
+            var cmdStr = log.CmdDisplay;
 
             // MsgId 显示
             var msgIdStr = log.MsgId != 0 ? $" #{log.MsgId}" : "";
@@ -564,24 +559,12 @@ namespace Pisces.Client.Editor
                 errorStr = $" <color=red>[ERR:{log.ResponseStatus}] {errorMsg}</color>";
             }
 
-            var text = $"{timeStr} {arrow} {typeStr}{cmdStr}{msgIdStr}{sizeStr}{broadcastStr}{elapsedStr}{errorStr}";
+            var text = $"{timeStr} {arrow} {cmdStr}{msgIdStr}{sizeStr}{broadcastStr}{elapsedStr}{errorStr}";
 
             using (new EditorGUILayout.HorizontalScope())
             {
                 GUILayout.Label(text, style);
             }
-        }
-
-        private static string GetMessageTypeTag(MessageType type)
-        {
-            return type switch
-            {
-                MessageType.Business => "<color=white>[BIZ]</color>",
-                MessageType.Heartbeat => "<color=#808080>[HB]</color>",
-                MessageType.TimeSync => "<color=cyan>[TS]</color>",
-                MessageType.Disconnect => "<color=red>[DC]</color>",
-                _ => $"[{type}]"
-            };
         }
 
         private string GetStateText(ConnectionState state)

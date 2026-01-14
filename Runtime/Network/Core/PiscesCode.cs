@@ -12,6 +12,14 @@ namespace Pisces.Client.Network.Core
         /// </summary>
         Success,
         /// <summary>
+        /// SDK 未初始化
+        /// </summary>
+        NotInitialized,
+        /// <summary>
+        /// 客户端已关闭
+        /// </summary>
+        ClientClosed,
+        /// <summary>
         /// 未连接到服务器
         /// </summary>
         NotConnected,
@@ -20,13 +28,9 @@ namespace Pisces.Client.Network.Core
         /// </summary>
         RateLimited,
         /// <summary>
-        /// 客户端已关闭
+        /// 无效的请求指令
         /// </summary>
-        ClientClosed,
-        /// <summary>
-        /// 无效的消息
-        /// </summary>
-        InvalidMessage,
+        InvalidRequestCommand,
         /// <summary>
         /// 通道发送失败
         /// </summary>
@@ -52,9 +56,10 @@ namespace Pisces.Client.Network.Core
         static PiscesCodeHelper()
         {
             Mapping(PiscesCode.Success, "Success");
+            Mapping(PiscesCode.NotInitialized, "SDK 未初始化");
             Mapping(PiscesCode.ClientClosed, "客户端已关闭");
             Mapping(PiscesCode.NotConnected, "未连接到服务器");
-            Mapping(PiscesCode.InvalidMessage, "无效的消息");
+            Mapping(PiscesCode.InvalidRequestCommand, "无效的请求指令");
             Mapping(PiscesCode.ChannelError, "通道发送失败");
             Mapping(PiscesCode.RateLimited, "发送频率超限");
             Mapping(PiscesCode.RequestLocked, "请求已锁定（重复请求）");

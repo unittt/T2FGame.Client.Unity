@@ -85,7 +85,7 @@ namespace Pisces.Client.Network
             EnsureInitialized();
             if (command == null)
             {
-                throw new PiscesException(PiscesCode.InvalidMessage);
+                throw new PiscesException(PiscesCode.InvalidRequestCommand);
             }
 
             // 非业务消息不需要等待响应，直接发送
@@ -171,7 +171,7 @@ namespace Pisces.Client.Network
         public PiscesCode SendRequest(RequestCommand command)
         {
             if (command == null)
-                return PiscesCode.InvalidMessage;
+                return PiscesCode.InvalidRequestCommand;
 
             var validateResult = TryValidateSendState();
             if (validateResult.HasValue)

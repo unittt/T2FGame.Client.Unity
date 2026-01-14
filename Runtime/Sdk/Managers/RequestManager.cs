@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Google.Protobuf;
+using Pisces.Client.Network.Core;
 using Pisces.Client.Utils;
 
 namespace Pisces.Client.Sdk
@@ -39,11 +40,7 @@ namespace Pisces.Client.Sdk
         /// <summary>
         /// 发送请求并等待响应
         /// </summary>
-        public async UniTask<ResponseMessage> RequestAsync<TRequest>(
-            int cmdMerge,
-            TRequest request,
-            CancellationToken cancellationToken = default
-        ) where TRequest : IMessage
+        public async UniTask<ResponseMessage> RequestAsync<TRequest>(int cmdMerge, TRequest request, CancellationToken cancellationToken = default) where TRequest : IMessage
         {
             EnsureConnected();
             var command = RequestCommand.Of(cmdMerge, request);
@@ -53,26 +50,16 @@ namespace Pisces.Client.Sdk
         /// <summary>
         /// 直接发送 RequestCommand 并等待响应
         /// </summary>
-        public async UniTask<ResponseMessage> RequestAsync(
-            RequestCommand command,
-            CancellationToken cancellationToken = default
-        )
+        public async UniTask<ResponseMessage> RequestAsync(RequestCommand command, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
-            if (command == null)
-                throw new ArgumentNullException(nameof(command));
-
             return await _connectionManager.Client.RequestAsync(command, cancellationToken);
         }
 
         /// <summary>
         /// 发送请求并等待响应（获取指定类型的响应数据）
         /// </summary>
-        public async UniTask<TResponse> RequestAsync<TResponse>(
-            int cmdMerge,
-            CancellationToken cancellationToken = default
-        )
-            where TResponse : IMessage, new()
+        public async UniTask<TResponse> RequestAsync<TResponse>(int cmdMerge, CancellationToken cancellationToken = default) where TResponse : IMessage, new()
         {
             var response = await RequestAsync(cmdMerge, cancellationToken);
             ThrowIfError(response);
@@ -102,60 +89,53 @@ namespace Pisces.Client.Sdk
         /// <summary>
         /// 发送请求（仅发送，不等待响应）
         /// </summary>
-        public void Send(int cmdMerge)
+        public PiscesCode Send(int cmdMerge)
             => SendCommand(RequestCommand.Of(cmdMerge));
 
         /// <summary>
         /// 发送请求（仅发送，不等待响应）
         /// </summary>
-        public void Send<TRequest>(int cmdMerge, TRequest request) where TRequest : IMessage
+        public PiscesCode Send<TRequest>(int cmdMerge, TRequest request) where TRequest : IMessage
             => SendCommand(RequestCommand.Of(cmdMerge, request));
 
         /// <summary>
         /// 直接发送 RequestCommand（仅发送，不等待响应）
         /// </summary>
-        public void Send(RequestCommand command)
+        public PiscesCode Send(RequestCommand command)
         {
-            if (command == null)
-            {
-                GameLogger.LogWarning("[RequestManager] RequestCommand 不能为 null");
-                return;
-            }
-            SendCommand(command);
+            return SendCommand(command);
         }
 
         /// <summary>
         /// 发送整数值
         /// </summary>
-        public void SendInt(int cmdMerge, int value)
+        public PiscesCode SendInt(int cmdMerge, int value)
             => SendCommand(RequestCommand.Of(cmdMerge, value));
 
         /// <summary>
         /// 发送字符串值
         /// </summary>
-        public void SendString(int cmdMerge, string value)
+        public PiscesCode SendString(int cmdMerge, string value)
             => SendCommand(RequestCommand.Of(cmdMerge, value));
 
         /// <summary>
         /// 发送长整数值
         /// </summary>
-        public void SendLong(int cmdMerge, long value)
+        public PiscesCode SendLong(int cmdMerge, long value)
             => SendCommand(RequestCommand.Of(cmdMerge, value));
 
         /// <summary>
         /// 发送布尔值
         /// </summary>
-        public void SendBool(int cmdMerge, bool value)
+        public PiscesCode SendBool(int cmdMerge, bool value)
             => SendCommand(RequestCommand.Of(cmdMerge, value));
 
         /// <summary>
         /// 统一的发送入口
         /// </summary>
-        private void SendCommand(RequestCommand command)
+        private PiscesCode SendCommand(RequestCommand command)
         {
-            if (!_connectionManager.IsConnected)
-                return;
-            _connectionManager.Client.SendRequest(command);
+            return _connectionManager.Client.SendRequest(command);
         }
 
         #endregion
@@ -178,14 +158,9 @@ namespace Pisces.Client.Sdk
         /// <summary>
         /// 发送请求并在收到响应时执行回调（有请求体，泛型响应）
         /// </summary>
-        public void Send<TRequest, TResponse>(
-            int cmdMerge,
-            TRequest request,
-            Action<TResponse> callback
-        )
-            where TRequest : IMessage
-            where TResponse : IMessage, new()
-            => ExecuteWithCallback(
+        public void Send<TRequest, TResponse>(int cmdMerge, TRequest request, Action<TResponse> callback) where TRequest : IMessage where TResponse : IMessage, new()
+            => ExecuteWithCallback
+            (
                 () => RequestAsync<TRequest, TResponse>(cmdMerge, request),
                 callback,
                 () => Send(cmdMerge, request)
@@ -194,11 +169,7 @@ namespace Pisces.Client.Sdk
         /// <summary>
         /// 发送请求并在收到响应时执行回调（有请求体，原始响应）
         /// </summary>
-        public void Send<TRequest>(
-            int cmdMerge,
-            TRequest request,
-            Action<ResponseMessage> callback
-        )
+        public void Send<TRequest>(int cmdMerge, TRequest request, Action<ResponseMessage> callback)
             where TRequest : IMessage
             => ExecuteWithCallback(
                 () => RequestAsync(cmdMerge, request),
@@ -211,22 +182,13 @@ namespace Pisces.Client.Sdk
         /// </summary>
         public void Send(RequestCommand command, Action<ResponseMessage> callback)
         {
-            if (command == null)
-            {
-                GameLogger.LogWarning("[RequestManager] RequestCommand 不能为 null");
-                return;
-            }
             ExecuteWithCallback(() => RequestAsync(command), callback, () => Send(command));
         }
 
         /// <summary>
         /// 统一的回调执行入口
         /// </summary>
-        private void ExecuteWithCallback<T>(
-            Func<UniTask<T>> requestFunc,
-            Action<T> callback,
-            Action fallbackSend
-        )
+        private void ExecuteWithCallback<T>(Func<UniTask<T>> requestFunc, Action<T> callback, Action fallbackSend)
         {
             if (!_connectionManager.IsConnected)
             {
@@ -246,10 +208,7 @@ namespace Pisces.Client.Sdk
         /// <summary>
         /// 统一的异步回调执行
         /// </summary>
-        private async UniTaskVoid ExecuteWithCallbackAsync<T>(
-            Func<UniTask<T>> requestFunc,
-            Action<T> callback
-        )
+        private async UniTaskVoid ExecuteWithCallbackAsync<T>(Func<UniTask<T>> requestFunc, Action<T> callback)
         {
             try
             {
@@ -270,7 +229,7 @@ namespace Pisces.Client.Sdk
         private void EnsureConnected()
         {
             if (!_connectionManager.IsConnected)
-                throw new InvalidOperationException("Not connected to server");
+                throw new PiscesException(PiscesCode.NotConnected);
         }
 
         private static void ThrowIfError(ResponseMessage response)

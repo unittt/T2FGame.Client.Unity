@@ -48,7 +48,7 @@ namespace Pisces.Client.Sdk
         public void Initialize(GameClientOptions options)
         {
             if (_disposed)
-                throw new ObjectDisposedException(nameof(ConnectionManager));
+                throw new PiscesException(PiscesCode.ClientClosed);
 
             if (_client != null)
             {
@@ -158,10 +158,10 @@ namespace Pisces.Client.Sdk
         private void EnsureInitialized()
         {
             if (_disposed)
-                throw new ObjectDisposedException(nameof(ConnectionManager));
+                throw new PiscesException(PiscesCode.ClientClosed);
 
             if (_client == null)
-                throw new InvalidOperationException("ConnectionManager not initialized");
+                throw new PiscesException(PiscesCode.NotInitialized);
         }
 
         public void Dispose()

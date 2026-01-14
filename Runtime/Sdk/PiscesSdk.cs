@@ -139,7 +139,7 @@ namespace Pisces.Client.Sdk
         public void Initialize(GameClientOptions options)
         {
             if (_disposed)
-                throw new ObjectDisposedException(nameof(PiscesSdk));
+                throw new PiscesException(PiscesCode.ClientClosed);
 
             if (_initialized)
             {
@@ -491,10 +491,10 @@ namespace Pisces.Client.Sdk
         private void EnsureInitialized()
         {
             if (_disposed)
-                throw new ObjectDisposedException(nameof(PiscesSdk));
+                throw new PiscesException(PiscesCode.ClientClosed);
 
             if (!_initialized)
-                throw new InvalidOperationException("SDK 未初始化，请先调用 Initialize()");
+                throw new PiscesException(PiscesCode.NotInitialized);
         }
 
         #endregion

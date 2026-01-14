@@ -345,10 +345,6 @@ namespace Pisces.Client.Settings
         [SerializeField]
         private GameLogLevel _logLevel = GameLogLevel.Info;
 
-        [Tooltip("是否使用工作线程进行网络收发（WebGL/微信小游戏不支持）")]
-        [SerializeField]
-        private bool _useWorkerThread = true;
-
         /// <summary>
         /// 日志级别
         /// </summary>
@@ -356,15 +352,6 @@ namespace Pisces.Client.Settings
         {
             get => _logLevel;
             set => _logLevel = value;
-        }
-
-        /// <summary>
-        /// 是否使用工作线程
-        /// </summary>
-        public bool UseWorkerThread
-        {
-            get => _useWorkerThread;
-            set => _useWorkerThread = value;
         }
 
         #endregion
@@ -396,21 +383,8 @@ namespace Pisces.Client.Settings
                 EnableRateLimit = _enableRateLimit,
                 MaxSendRate = _maxSendRate,
                 MaxBurstSize = _maxBurstSize,
-                LogLevel = _logLevel,
-                UseWorkerThread = GetEffectiveUseWorkerThread()
+                LogLevel = _logLevel
             };
-        }
-
-        /// <summary>
-        /// 获取实际的 UseWorkerThread 值（考虑平台限制）
-        /// </summary>
-        private bool GetEffectiveUseWorkerThread()
-        {
-#if UNITY_WEBGL || UNITY_WEIXINMINIGAME
-            return false; // 这些平台不支持多线程
-#else
-            return _useWorkerThread;
-#endif
         }
 
         /// <summary>
@@ -445,7 +419,6 @@ namespace Pisces.Client.Settings
             _maxBurstSize = 50;
 
             _logLevel = GameLogLevel.Info;
-            _useWorkerThread = true;
         }
 
         /// <summary>

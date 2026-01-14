@@ -111,20 +111,6 @@ namespace Pisces.Client.Network
         #endregion
 
         /// <summary>
-        /// 是否使用工作线程进行网络收发
-        ///
-        /// - true: 在独立线程中处理网络IO，避免阻塞主线程（推荐用于 Android/iOS/Windows/Mac/Linux）
-        /// - false: 在主线程中处理网络IO（必须用于 WebGL/微信小游戏等不支持多线程的平台）
-        ///
-        /// 注意：WebSocket 传输不受此配置影响，始终使用异步回调模式
-        /// </summary>
-        public bool UseWorkerThread { get; set; } =
-#if UNITY_WEBGL || UNITY_WEIXINMINIGAME
-            false;
-#else
-            true;
-#endif
-        /// <summary>
         /// 克隆配置
         /// </summary>
         public GameClientOptions Clone()
@@ -149,7 +135,6 @@ namespace Pisces.Client.Network
                 EnableRateLimit = EnableRateLimit,
                 MaxSendRate = MaxSendRate,
                 MaxBurstSize = MaxBurstSize,
-                UseWorkerThread = UseWorkerThread,
             };
         }
     }

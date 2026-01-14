@@ -17,7 +17,7 @@ namespace Pisces.Client.Editor.Settings
     {
         private const string SettingsPath = "Project/Pisces Client";
         private const string WebSocketDefineSymbol = "ENABLE_WEBSOCKET";
-        
+
         private SerializedObject _serializedSettings;
         private PiscesSettings _settings;
 
@@ -38,7 +38,6 @@ namespace Pisces.Client.Editor.Settings
         private SerializedProperty _maxSendRate;
         private SerializedProperty _maxBurstSize;
         private SerializedProperty _logLevel;
-        private SerializedProperty _useWorkerThread;
 
         // Foldout States
         private bool _serverFoldout = true;
@@ -97,7 +96,6 @@ namespace Pisces.Client.Editor.Settings
             _maxSendRate = _serializedSettings.FindProperty("_maxSendRate");
             _maxBurstSize = _serializedSettings.FindProperty("_maxBurstSize");
             _logLevel = _serializedSettings.FindProperty("_logLevel");
-            _useWorkerThread = _serializedSettings.FindProperty("_useWorkerThread");
         }
 
         private void InitializeStyles()
@@ -174,7 +172,7 @@ namespace Pisces.Client.Editor.Settings
 
             _serializedSettings.ApplyModifiedProperties();
         }
-        
+
 
         private void DrawServerEnvironmentSection()
         {
@@ -518,17 +516,6 @@ namespace Pisces.Client.Editor.Settings
                 {
                     EditorGUILayout.HelpBox(levelDescription, MessageType.None);
                 }
-
-                EditorGUILayout.Space(5);
-
-                EditorGUILayout.PropertyField(_useWorkerThread, new GUIContent("使用工作线程",
-                    "在独立线程处理网络 I/O（WebGL 不支持）"));
-
-#if UNITY_WEBGL || UNITY_WEIXINMINIGAME
-                EditorGUILayout.HelpBox(
-                    "WebGL / 小游戏平台不支持工作线程",
-                    MessageType.Info);
-#endif
 
                 EditorGUI.indentLevel--;
             }

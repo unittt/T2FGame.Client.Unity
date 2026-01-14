@@ -24,10 +24,10 @@ namespace Pisces.Client.Network.Channel
         /// 接收消息
         /// UDP 数据报有边界，每次 Receive 返回一个完整的数据报
         /// </summary>
-        protected override byte[] ReceiveMessage(Socket client)
+        protected override ArraySegment<byte> ReceiveMessage(Socket client)
         {
             if (client == null)
-                return null;
+                return default;
 
             try
             {
@@ -37,12 +37,12 @@ namespace Pisces.Client.Network.Channel
                     // 使用 Poll 等待数据，超时 100ms
                     if (!client.Poll(100000, SelectMode.SelectRead))
                     {
-                        return null;
+                        return default;
                     }
 
                     // 再次检查
                     if (client.Available <= 0)
-                        return null;
+                        return default;
                 }
 
                 // UDP 接收 - 每次接收一个完整的数据报
@@ -54,12 +54,12 @@ namespace Pisces.Client.Network.Channel
                 );
 
                 if (bytesRead <= 0)
-                    return null;
+                    return default;
 
                 // 返回接收到的数据（复制出来，因为缓冲区会被复用）
                 var result = new byte[bytesRead];
                 Buffer.BlockCopy(ReceiveBuffer, 0, result, 0, bytesRead);
-                return result;
+                return new ArraySegment<byte>(result, 0, bytesRead);
             }
             catch (SocketException ex)
             {
@@ -68,7 +68,7 @@ namespace Pisces.Client.Network.Channel
                 if (ex.SocketErrorCode == SocketError.ConnectionReset)
                 {
                     GameLogger.LogWarning($"[UdpChannel] 收到 ICMP 错误: {ex.Message}");
-                    return null; // 忽略，继续接收
+                    return default; // 忽略，继续接收
                 }
                 throw;
             }

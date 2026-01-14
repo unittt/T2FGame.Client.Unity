@@ -50,7 +50,7 @@ namespace Pisces.Client.Network.Channel
         public bool IsConnected => _isConnected && Client is { Connected: true };
 
         public event Action<IProtocolChannel> SendMessageEvent;
-        public event Action<IProtocolChannel, byte[]> ReceiveMessageEvent;
+        public event Action<IProtocolChannel, ArraySegment<byte>> ReceiveMessageEvent;
         public event Action<IProtocolChannel> DisconnectServerEvent;
         public event Action<IProtocolChannel, byte[], SendFailureReason> SendFailedEvent;
 
@@ -108,7 +108,7 @@ namespace Pisces.Client.Network.Channel
 
                     var data = ReceiveMessage(Client);
 
-                    if (data is { Length: > 0 })
+                    if (data.Count > 0)
                     {
                         // 触发接收事件
                         MainThreadDispatcher.InvokeOnMainThread(() => ReceiveMessageEvent?.Invoke(this, data));
@@ -138,7 +138,7 @@ namespace Pisces.Client.Network.Channel
         /// </summary>
         /// <param name="client">Socket 客户端</param>
         /// <returns>接收到的原始字节数据</returns>
-        protected abstract byte[] ReceiveMessage(Socket client);
+        protected abstract ArraySegment<byte> ReceiveMessage(Socket client);
 
         private void SendThreadLoop()
         {

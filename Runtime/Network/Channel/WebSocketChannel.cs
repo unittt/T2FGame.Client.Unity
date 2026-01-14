@@ -32,7 +32,7 @@ namespace Pisces.Client.Network.Channel
         public bool IsConnected { get; private set; }
 
         public event Action<IProtocolChannel> SendMessageEvent;
-        public event Action<IProtocolChannel, byte[]> ReceiveMessageEvent;
+        public event Action<IProtocolChannel, ArraySegment<byte>> ReceiveMessageEvent;
         public event Action<IProtocolChannel> DisconnectServerEvent;
         public event Action<IProtocolChannel, byte[], SendFailureReason> SendFailedEvent;
 
@@ -222,7 +222,7 @@ namespace Pisces.Client.Network.Channel
             if (e.IsBinary)
             {
                 // 处理二进制消息
-                ReceiveMessageEvent?.Invoke(this, e.RawData);
+                ReceiveMessageEvent?.Invoke(this, new ArraySegment<byte>(e.RawData));
             }
             else
             {

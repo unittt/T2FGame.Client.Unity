@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Pisces.Client.Network.Core;
 using Pisces.Client.Sdk;
 using Pisces.Client.Utils;
 using Pisces.Protocol;
@@ -141,16 +142,22 @@ namespace Pisces.Client.Network
                         removedInfo.Tcs?.TrySetException(timeoutException);
                         timedOutCount++;
 
-                        GameLogger.LogWarning(
-                            $"[GameClient] 强制清理超时请求: MsgId={removedInfo.MsgId}, Cmd={CmdKit.ToString(removedInfo.CmdInfo)}"
-                        );
+                        if (GameLogger.IsLevelEnabled(GameLogLevel.Warning))
+                        {
+                            GameLogger.LogWarning(
+                                $"[GameClient] 强制清理超时请求: MsgId={removedInfo.MsgId}, Cmd={CmdKit.ToString(removedInfo.CmdInfo)}"
+                            );
+                        }
                     }
                 }
             }
 
             if (cleanedCount > 0 || timedOutCount > 0)
             {
-                GameLogger.LogVerbose($"[GameClient] 清理待处理请求: 已完成={cleanedCount}, 超时={timedOutCount}");
+                if (GameLogger.IsLevelEnabled(GameLogLevel.Verbose))
+                {
+                    GameLogger.LogVerbose($"[GameClient] 清理待处理请求: 已完成={cleanedCount}, 超时={timedOutCount}");
+                }
             }
 
             // 如果待处理请求数量过多，记录警告
@@ -169,14 +176,19 @@ namespace Pisces.Client.Network
         /// <summary>
         /// 清理所有待处理请求
         /// </summary>
-        /// <param name="exception">异常原因</param>
-        private void ClearPendingRequests(Exception exception)
+        /// <param name="result">失败原因</param>
+        private void ClearPendingRequests(SendResult result)
         {
+            var count = _pendingRequests.Count;
+            if (count == 0) return;
+
             foreach (var kvp in _pendingRequests)
             {
                 try
                 {
-                    kvp.Value.Tcs?.TrySetException(exception);
+                    var info = kvp.Value;
+                    var exception = new PiscesSendException(result, info.CmdInfo, info.MsgId);
+                    info.Tcs?.TrySetException(exception);
                 }
                 catch (Exception ex)
                 {
@@ -184,6 +196,11 @@ namespace Pisces.Client.Network
                 }
             }
             _pendingRequests.Clear();
+
+            if (count > 0)
+            {
+                GameLogger.LogDebug($"[GameClient] 已清理 {count} 个待处理请求，原因: {result}");
+            }
         }
 
         /// <summary>

@@ -68,6 +68,19 @@ namespace Pisces.Client.Network.Core
         }
 
         /// <summary>
+        /// 写入数据（ArraySegment 重载）
+        /// </summary>
+        public void Write(ArraySegment<byte> data)
+        {
+            if (data.Count <= 0)
+                return;
+
+            EnsureCapacity(data.Count);
+            Buffer.BlockCopy(data.Array, data.Offset, _buffer, _writePos, data.Count);
+            _writePos += data.Count;
+        }
+
+        /// <summary>
         /// 尝试读取完整的数据包
         /// 注意：返回的列表会在下次调用时被清空，调用者应立即处理
         /// </summary>

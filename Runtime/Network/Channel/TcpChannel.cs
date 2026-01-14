@@ -20,10 +20,10 @@ namespace Pisces.Client.Network.Channel
         /// 接收消息
         /// 返回原始字节数据，粘包/拆包由上层处理
         /// </summary>
-        protected override byte[] ReceiveMessage(Socket client)
+        protected override ArraySegment<byte> ReceiveMessage(Socket client)
         {
             if (client is not { Connected: true })
-                return null;
+                return default;
 
             // 检查是否有数据可读
             if (client.Available <= 0)
@@ -34,7 +34,7 @@ namespace Pisces.Client.Network.Channel
                 {
                     throw new SocketException((int)SocketError.ConnectionReset);
                 }
-                return null;
+                return default;
             }
 
             // 读取可用数据
@@ -51,10 +51,10 @@ namespace Pisces.Client.Network.Channel
                 throw new SocketException((int)SocketError.ConnectionReset);
             }
 
-            // 返回读取到的原始字节
+            // 返回读取到的原始字节（需要复制，因为会调度到主线程）
             var result = new byte[bytesRead];
             Buffer.BlockCopy(ReceiveBuffer, 0, result, 0, bytesRead);
-            return result;
+            return new ArraySegment<byte>(result, 0, bytesRead);
         }
     }
 }

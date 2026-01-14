@@ -240,7 +240,7 @@ namespace Pisces.Client.Network
 
             _stateMachine.TryTransition(targetState, out _);
             _statistics.RecordDisconnected();
-            ClearPendingRequests(new OperationCanceledException(reason));
+            ClearPendingRequests(SendResult.ClientClosed);
             ClearLockedRoutes();
         }
 
@@ -281,7 +281,7 @@ namespace Pisces.Client.Network
             _stateMachine.TryTransition(ConnectionState.Disconnected, out _);
             _statistics.RecordDisconnected();
 
-            ClearPendingRequests(new OperationCanceledException("连接断开"));
+            ClearPendingRequests(SendResult.NotConnected);
             ClearLockedRoutes();
 
             // 尝试自动重连

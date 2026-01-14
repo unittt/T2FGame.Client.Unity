@@ -80,7 +80,7 @@ namespace Pisces.Client.Network.Channel
         /// <summary>
         /// 接收消息成功事件
         /// </summary>
-        event Action<IProtocolChannel, byte[]> ReceiveMessageEvent;
+        event Action<IProtocolChannel, ArraySegment<byte>> ReceiveMessageEvent;
 
         /// <summary>
         /// 与服务器断开连接事件

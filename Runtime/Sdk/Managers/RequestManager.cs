@@ -193,7 +193,7 @@ namespace Pisces.Client.Sdk
             if (!_connectionManager.IsConnected)
             {
                 GameLogger.LogWarning("[RequestManager] 未连接，无法发送请求");
-                return;
+                throw new PiscesException(PiscesCode.NotConnected);
             }
 
             if (callback == null)

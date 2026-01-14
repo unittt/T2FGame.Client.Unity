@@ -378,7 +378,7 @@ namespace Pisces.Client.Sdk
         }
 
         /// <summary>
-        /// 直接发送 RequestCommand 并在收到响应时执行回调
+        /// 直接发送 RequestCommand 并在收到响应时执行回调(注意RequestCommand 必须 RequestCommand 工厂方法创建)
         /// </summary>
         public void Send(RequestCommand command, Action<ResponseMessage> callback)
         {

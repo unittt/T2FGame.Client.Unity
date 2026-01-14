@@ -79,7 +79,10 @@ namespace Pisces.Client.Network.Core
 
         public static string GetMessage(this PiscesCode result)
         {
-            _resultMapping.TryGetValue(result, out var msg);
+            if (!_resultMapping.TryGetValue(result, out var msg))
+            {
+                msg = result.ToString();
+            }
             return msg;
         }
     }

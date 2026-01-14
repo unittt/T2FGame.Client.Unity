@@ -15,11 +15,7 @@ namespace Pisces.Client.Sdk
         /// <summary>
         /// 创建一个新的请求命令实例，并指定其业务路由标识、数据内容以及命令类型。
         /// </summary>
-        private static RequestCommand Of(
-            int cmdMerge,
-            ByteString data,
-            MessageType commandType = MessageType.Business
-        )
+        private static RequestCommand Of(int cmdMerge, ByteString data, MessageType commandType = MessageType.Business)
         {
             var requestCommand = ReferencePool<RequestCommand>.Spawn();
             requestCommand.Initialize(cmdMerge, data, commandType);

@@ -94,7 +94,7 @@ namespace Pisces.Client.Network
                 var result = SendInternal(command, out var pktLen);
                 if (result != PiscesCode.Success)
                 {
-                    throw new PiscesException(result, command.CmdInfo, command.MsgId);
+                    throw new PiscesException(result, command);
                 }
 
                 _statistics.RecordSend(pktLen, command);
@@ -105,7 +105,7 @@ namespace Pisces.Client.Network
             // 业务请求去重检查
             if (!TryLockRoute(command.CmdInfo))
             {
-                throw new PiscesException(PiscesCode.RequestLocked, command.CmdInfo, command.MsgId);
+                throw new PiscesException(PiscesCode.RequestLocked, command);
             }
 
             // 创建等待响应的信息
@@ -122,7 +122,7 @@ namespace Pisces.Client.Network
             if (!_pendingRequests.TryAdd(command.MsgId, pendingInfo))
             {
                 UnlockRoute(command.CmdInfo);
-                throw new PiscesException(PiscesCode.DuplicateMsgId, command.CmdInfo, command.MsgId);
+                throw new PiscesException(PiscesCode.DuplicateMsgId, command);
             }
 
             try
@@ -131,7 +131,7 @@ namespace Pisces.Client.Network
                 var result = SendInternal(command, out var packetLength);
                 if (result != PiscesCode.Success)
                 {
-                    throw new PiscesException(result, command.CmdInfo, command.MsgId);
+                    throw new PiscesException(result, command);
                 }
 
                 // 记录统计
@@ -149,7 +149,7 @@ namespace Pisces.Client.Network
             }
             catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
             {
-                throw new PiscesException(PiscesCode.Timeout, command.CmdInfo, command.MsgId);
+                throw new PiscesException(PiscesCode.Timeout, command);
             }
             finally
             {

@@ -30,6 +30,13 @@ namespace Pisces.Client.Sdk
             ErrorCode = errorCode;
         }
 
+        public PiscesException(PiscesCode errorCode, RequestCommand command, string message = null): base(message ?? GetDefaultMessage(errorCode, command.CmdInfo, command.MsgId))
+        {
+            ErrorCode = errorCode;
+            CmdInfo = command.CmdInfo;
+            MsgId = command.MsgId;
+        }
+
         public PiscesException(PiscesCode errorCode, CmdInfo cmdInfo, int msgId = 0, string message = null) : base(message ?? GetDefaultMessage(errorCode, cmdInfo, msgId))
         {
             ErrorCode = errorCode;

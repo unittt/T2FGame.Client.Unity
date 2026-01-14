@@ -17,14 +17,14 @@ namespace Pisces.Client.Sdk
         /// cmdMerge -> 回调委托的映射表
         /// 使用 multicast delegate 实现高效的订阅机制
         /// </summary>
-        private readonly Dictionary<int, Action<ExternalMessage>> _routes = new();
+        private readonly Dictionary<CmdInfo, Action<ExternalMessage>> _routes = new();
 
         /// <summary>
         /// 分发异常事件
         /// 当订阅者处理消息时发生异常时触发
         /// 参数：cmdMerge, 异常
         /// </summary>
-        public event Action<int, Exception> OnDispatchError;
+        public event Action<CmdInfo, Exception> OnDispatchError;
 
         #region Subscribe - 返回 IDisposable
 
@@ -48,7 +48,7 @@ namespace Pisces.Client.Sdk
                 _routes[cmdMerge] = handler;
             }
 
-            GameLogger.LogVerbose($"[MessageRouter] 订阅 cmdMerge: {cmdMerge}");
+            GameLogger.LogVerbose($"[MessageRouter] 订阅 cmdMerge: {CmdKit.ToString(cmdMerge)}");
 
             return new Subscription(this, cmdMerge, handler);
         }
@@ -141,7 +141,7 @@ namespace Pisces.Client.Sdk
                 _routes[cmdMerge] = updated;
             }
 
-            GameLogger.LogVerbose($"[MessageRouter] 取消订阅 cmdMerge: {cmdMerge}");
+            GameLogger.LogVerbose($"[MessageRouter] 取消订阅 cmdMerge: {CmdKit.ToString(cmdMerge)}");
         }
 
         #endregion
@@ -172,14 +172,12 @@ namespace Pisces.Client.Sdk
                 }
                 catch (Exception ex)
                 {
-                    GameLogger.LogError(
-                        $"[MessageRouter] 处理器异常 cmdMerge {message.CmdMerge}: {ex.Message}\n{ex.StackTrace}"
-                    );
+                    GameLogger.LogError($"[MessageRouter] 处理器异常 cmdMerge {message.CmdInfo.ToString()}: {ex.Message}\n{ex.StackTrace}");
 
                     // 触发异常事件，让外部可以处理（如统计、上报等）
                     try
                     {
-                        OnDispatchError?.Invoke(message.CmdMerge, ex);
+                        OnDispatchError?.Invoke(message.CmdInfo, ex);
                     }
                     catch
                     {
@@ -202,7 +200,7 @@ namespace Pisces.Client.Sdk
         public void Clear(int cmdMerge)
         {
             _routes.Remove(cmdMerge);
-            GameLogger.LogDebug($"[MessageRouter] 清除 cmdMerge 订阅: {cmdMerge}");
+            GameLogger.LogDebug($"[MessageRouter] 清除 cmdMerge 订阅: {CmdKit.ToString(cmdMerge)}");
         }
 
         /// <summary>

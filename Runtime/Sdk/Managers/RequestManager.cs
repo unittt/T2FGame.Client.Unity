@@ -30,10 +30,7 @@ namespace Pisces.Client.Sdk
         /// <summary>
         /// 发送请求并等待响应
         /// </summary>
-        public async UniTask<ResponseMessage> RequestAsync(
-            int cmdMerge,
-            CancellationToken cancellationToken = default
-        )
+        public async UniTask<ResponseMessage> RequestAsync(int cmdMerge, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
             var command = RequestCommand.Of(cmdMerge);
@@ -280,7 +277,7 @@ namespace Pisces.Client.Sdk
         private static void ThrowIfError(ResponseMessage response)
         {
             if (response.HasError)
-                throw new PiscesException(response);
+                throw new PiscesResponseException(response);
         }
 
         #endregion

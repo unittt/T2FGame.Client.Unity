@@ -7,7 +7,7 @@ namespace Pisces.Client.Sdk
     /// Pisces 框架统一异常
     /// 用于封装服务器返回的错误响应
     /// </summary>
-    public class PiscesException : Exception
+    public class PiscesResponseException : Exception
     {
         /// <summary>
         /// 响应状态码（错误码）
@@ -17,7 +17,7 @@ namespace Pisces.Client.Sdk
         /// <summary>
         /// 命令标识
         /// </summary>
-        public int CmdMerge { get; }
+        public CmdInfo CmdInfo { get; }
 
         /// <summary>
         /// 消息ID（用于追踪请求）
@@ -29,35 +29,24 @@ namespace Pisces.Client.Sdk
         /// </summary>
         public string ErrorMessage { get; }
 
-        public PiscesException(ResponseMessage response)
-            : base(FormatMessage(response))
+        public PiscesResponseException(ResponseMessage response) : base(FormatMessage(response))
         {
             ResponseStatus = response.ResponseStatus;
-            CmdMerge = response.CmdInfo;
+            CmdInfo = response.CmdInfo;
             MsgId = response.MsgId;
             ErrorMessage = response.ErrorMessage;
         }
 
-        public PiscesException(int responseStatus, string errorMessage, int cmdMerge = 0, int msgId = 0)
-            : base($"[{responseStatus}] {errorMessage}")
-        {
-            ResponseStatus = responseStatus;
-            CmdMerge = cmdMerge;
-            MsgId = msgId;
-            ErrorMessage = errorMessage;
-        }
-
         private static string FormatMessage(ResponseMessage response)
         {
-            var cmdInfo = CmdKit.ToString(response.CmdInfo);
             if (string.IsNullOrEmpty(response.ErrorMessage))
-                return $"[{response.ResponseStatus}] Request failed: {cmdInfo} (MsgId={response.MsgId})";
-            return $"[{response.ResponseStatus}] {response.ErrorMessage} ({cmdInfo}, MsgId={response.MsgId})";
+                return $"[{response.ResponseStatus}] Request failed: {response.CmdInfo.ToString()} (MsgId={response.MsgId})";
+            return $"[{response.ResponseStatus}] {response.ErrorMessage} ({response.CmdInfo.ToString()}, MsgId={response.MsgId})";
         }
 
         public override string ToString()
         {
-            return $"PiscesException: Status={ResponseStatus}, CmdMerge={CmdMerge}, MsgId={MsgId}, Message={ErrorMessage}";
+            return $"PiscesResponseException: Status={ResponseStatus}, CmdMerge={CmdInfo}, MsgId={MsgId}, Message={ErrorMessage}";
         }
     }
 }

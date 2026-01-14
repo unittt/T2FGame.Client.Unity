@@ -10,6 +10,11 @@ namespace Pisces.Protocol
     public sealed partial class ExternalMessage : IPoolable
     {
         /// <summary>
+        /// 命令信息
+        /// </summary>
+        public CmdInfo CmdInfo => new(cmdMerge_);
+
+        /// <summary>
         /// 从池中取出时调用
         /// </summary>
         public void OnSpawn()

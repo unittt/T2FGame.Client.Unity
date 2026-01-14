@@ -1,18 +1,17 @@
-using System.Collections.Concurrent;
+using System.Collections.Generic;
 using Pisces.Client.Utils;
 
 namespace Pisces.Client.Network
 {
     /// <summary>
-    /// GameClient - 请求去重部分
+    /// GameClient - 业务请求去重部分
     /// </summary>
     public partial class GameClient
     {
         /// <summary>
-        /// 路由锁定表
-        /// Key: CmdMerge
+        /// 已锁定的路由集合
         /// </summary>
-        private readonly ConcurrentDictionary<int, byte> _lockedRoutes = new();
+        private readonly HashSet<int> _lockedRoutes = new();
 
         /// <summary>
         /// 尝试锁定路由
@@ -27,7 +26,7 @@ namespace Pisces.Client.Network
             if (_options.DedupExcludeList.Contains(cmdMerge))
                 return true;
 
-            return _lockedRoutes.TryAdd(cmdMerge, 0);
+            return _lockedRoutes.Add(cmdMerge);
         }
 
         /// <summary>
@@ -36,7 +35,7 @@ namespace Pisces.Client.Network
         /// <param name="cmdMerge">路由标识</param>
         private void UnlockRoute(int cmdMerge)
         {
-            _lockedRoutes.TryRemove(cmdMerge, out _);
+            _lockedRoutes.Remove(cmdMerge);
         }
 
         /// <summary>

@@ -96,9 +96,9 @@ namespace Pisces.Client.Network
             try
             {
                 // 1. 基础校验
-                if (_disposed || _isClosed) throw new PiscesException(PiscesCode.ClientClosed);
-                if (!IsConnected) throw new PiscesException(PiscesCode.NotConnected);
                 if (command == null) throw new PiscesException(PiscesCode.InvalidRequestCommand);
+                if (_disposed || _isClosed) throw new PiscesException(PiscesCode.ClientClosed,command);
+                if (!IsConnected) throw new PiscesException(PiscesCode.NotConnected,command);
 
                 PendingRequestInfo pendingInfo = null;
 
@@ -107,7 +107,7 @@ namespace Pisces.Client.Network
                 {
                     if (!TryLockRoute(command.CmdInfo))
                     {
-                        throw new PiscesException(PiscesCode.RequestLocked);
+                        throw new PiscesException(PiscesCode.RequestLocked,command);
                     }
 
                     routeLocked = true;
@@ -115,7 +115,7 @@ namespace Pisces.Client.Network
                     if (_rateLimiter != null && !_rateLimiter.TryAcquire())
                     {
                         _statistics.RecordRateLimited();
-                        throw new PiscesException(PiscesCode.RateLimited);
+                        throw new PiscesException(PiscesCode.RateLimited,command);
                     }
                 }
 
@@ -133,7 +133,7 @@ namespace Pisces.Client.Network
 
                     if (!_pendingRequests.TryAdd(command.MsgId, pendingInfo))
                     {
-                         throw new PiscesException(PiscesCode.DuplicateMsgId);
+                         throw new PiscesException(PiscesCode.DuplicateMsgId,command);
                     }
                     pendingAdded = true;
                 }
@@ -146,7 +146,7 @@ namespace Pisces.Client.Network
                     GameLogger.LogWarning($"[GameClient] 发送失败: {command.CmdInfo}, MsgId={command.MsgId}, 原因={sendResult}");
                     OnSendFailed?.Invoke(command.CmdInfo, command.MsgId, sendResult);
 
-                    throw new PiscesException(sendResult);
+                    throw new PiscesException(sendResult, command);
                 }
 
                 // 5. 统计记录
@@ -167,7 +167,7 @@ namespace Pisces.Client.Network
                     }
                     catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
                     {
-                        throw new PiscesException(PiscesCode.Timeout);
+                        throw new PiscesException(PiscesCode.Timeout,command);
                     }
                 }
                 return response;

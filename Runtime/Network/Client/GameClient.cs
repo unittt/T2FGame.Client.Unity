@@ -3,9 +3,10 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using Pisces.Client.Network.Channel;
 using Pisces.Client.Network.Core;
+using Pisces.Client.Sdk;
+using Pisces.Client.Unity;
 using Pisces.Client.Utils;
 using Pisces.Protocol;
-using UnityEngine;
 
 namespace Pisces.Client.Network
 {
@@ -240,7 +241,7 @@ namespace Pisces.Client.Network
 
             _stateMachine.TryTransition(targetState, out _);
             _statistics.RecordDisconnected();
-            ClearPendingRequests(SendResult.ClientClosed);
+            ClearPendingRequests(PiscesCode.ClientClosed);
             ClearLockedRoutes();
         }
 
@@ -274,14 +275,14 @@ namespace Pisces.Client.Network
                 return;
 
             // Unity 退出 Play Mode 时不处理
-            if (!Application.isPlaying)
+            if (!PiscesLifecycleManager.IsPlaying)
                 return;
 
             GameLogger.LogWarning("[GameClient] 连接已断开");
             _stateMachine.TryTransition(ConnectionState.Disconnected, out _);
             _statistics.RecordDisconnected();
 
-            ClearPendingRequests(SendResult.NotConnected);
+            ClearPendingRequests(PiscesCode.NotConnected);
             ClearLockedRoutes();
 
             // 尝试自动重连
@@ -289,6 +290,18 @@ namespace Pisces.Client.Network
             {
                 StartReconnect();
             }
+        }
+
+        /// <summary>
+        /// 检查状态
+        /// </summary>
+        private void EnsureInitialized()
+        {
+            if (_disposed || _isClosed)
+                throw new PiscesException(PiscesCode.ClientClosed);
+
+            if (!IsConnected)
+                throw new PiscesException(PiscesCode.NotConnected);
         }
 
         public void Dispose()

@@ -177,7 +177,7 @@ namespace Pisces.Client.Network
         /// 清理所有待处理请求
         /// </summary>
         /// <param name="result">失败原因</param>
-        private void ClearPendingRequests(SendResult result)
+        private void ClearPendingRequests(PiscesCode result)
         {
             var count = _pendingRequests.Count;
             if (count == 0) return;
@@ -187,7 +187,7 @@ namespace Pisces.Client.Network
                 try
                 {
                     var info = kvp.Value;
-                    var exception = new PiscesSendException(result, info.CmdInfo, info.MsgId);
+                    var exception = new PiscesException(result, info.CmdInfo, info.MsgId);
                     info.Tcs?.TrySetException(exception);
                 }
                 catch (Exception ex)

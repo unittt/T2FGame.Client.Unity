@@ -17,7 +17,7 @@ namespace Pisces.Client.Sdk
         /// cmdMerge -> 回调委托的映射表
         /// 使用 multicast delegate 实现高效的订阅机制
         /// </summary>
-        private readonly Dictionary<CmdInfo, Action<ExternalMessage>> _routes = new();
+        private readonly Dictionary<CmdInfo, Action<ResponseMessage>> _routes = new();
 
         /// <summary>
         /// 分发异常事件
@@ -34,7 +34,7 @@ namespace Pisces.Client.Sdk
         /// <param name="cmdMerge">命令路由标识</param>
         /// <param name="handler">消息处理回调</param>
         /// <returns>用于取消订阅的 IDisposable</returns>
-        public IDisposable Subscribe(int cmdMerge, Action<ExternalMessage> handler)
+        public IDisposable Subscribe(int cmdMerge, Action<ResponseMessage> handler)
         {
             if (handler == null)
                 return Subscription.Empty;
@@ -55,6 +55,7 @@ namespace Pisces.Client.Sdk
 
         /// <summary>
         /// 订阅指定 cmdMerge 的消息（泛型版本，自动解包）
+        /// 利用 ResponseMessage 的缓存机制，多个订阅者共享反序列化结果
         /// </summary>
         /// <typeparam name="TMessage">消息类型</typeparam>
         /// <param name="cmdMerge">命令路由标识</param>
@@ -66,18 +67,11 @@ namespace Pisces.Client.Sdk
             if (handler == null)
                 return Subscription.Empty;
 
-            // 创建包装器
-            Action<ExternalMessage> wrapper = message =>
+            // 创建包装器，利用 ResponseMessage 的缓存
+            Action<ResponseMessage> wrapper = response =>
             {
-                try
-                {
-                    var typedMessage = ProtoSerializer.Deserialize<TMessage>(message.Data);
-                    handler.Invoke(typedMessage);
-                }
-                catch (Exception ex)
-                {
-                    GameLogger.LogError($"[MessageRouter] 解包消息失败: {ex.Message}");
-                }
+                var typedMessage = response.GetValue<TMessage>();
+                handler.Invoke(typedMessage);
             };
 
             return Subscribe(cmdMerge, wrapper);
@@ -85,30 +79,23 @@ namespace Pisces.Client.Sdk
 
         /// <summary>
         /// 订阅指定 cmdMerge 的消息（使用 MessageParser，性能更优）
+        /// 利用 ResponseMessage 的缓存机制，多个订阅者共享反序列化结果
         /// </summary>
         /// <typeparam name="TMessage">消息类型</typeparam>
         /// <param name="cmdMerge">命令路由标识</param>
         /// <param name="handler">消息处理回调</param>
         /// <param name="parser">消息解析器，通常使用 YourMessage.Parser</param>
         /// <returns>用于取消订阅的 IDisposable</returns>
-        public IDisposable Subscribe<TMessage>(int cmdMerge, Action<TMessage> handler, MessageParser<TMessage> parser)
-            where TMessage : IMessage<TMessage>
+        public IDisposable Subscribe<TMessage>(int cmdMerge, Action<TMessage> handler, MessageParser<TMessage> parser) where TMessage : IMessage<TMessage>
         {
             if (handler == null || parser == null)
                 return Subscription.Empty;
 
-            // 创建包装器，使用 MessageParser 解析
-            Action<ExternalMessage> wrapper = message =>
+            // 创建包装器，利用 ResponseMessage 的缓存
+            Action<ResponseMessage> wrapper = response =>
             {
-                try
-                {
-                    var typedMessage = ProtoSerializer.Deserialize(message.Data, parser);
-                    handler.Invoke(typedMessage);
-                }
-                catch (Exception ex)
-                {
-                    GameLogger.LogError($"[MessageRouter] 解包消息失败: {ex.Message}");
-                }
+                var typedMessage = response.GetValue(parser);
+                handler.Invoke(typedMessage);
             };
 
             return Subscribe(cmdMerge, wrapper);
@@ -123,7 +110,7 @@ namespace Pisces.Client.Sdk
         /// </summary>
         /// <param name="cmdMerge">命令路由标识</param>
         /// <param name="handler">消息处理回调</param>
-        internal void Unsubscribe(int cmdMerge, Action<ExternalMessage> handler)
+        private void Unsubscribe(int cmdMerge, Action<ResponseMessage> handler)
         {
             if (handler == null)
                 return;
@@ -140,8 +127,6 @@ namespace Pisces.Client.Sdk
             {
                 _routes[cmdMerge] = updated;
             }
-
-            GameLogger.LogVerbose($"[MessageRouter] 取消订阅 cmdMerge: {CmdKit.ToString(cmdMerge)}");
         }
 
         #endregion
@@ -152,13 +137,13 @@ namespace Pisces.Client.Sdk
         /// 分发消息到订阅者
         /// 使用 GetInvocationList 遍历所有订阅者，确保单个订阅者异常不影响其他订阅者
         /// </summary>
-        /// <param name="message">接收到的消息</param>
-        public void Dispatch(ExternalMessage message)
+        /// <param name="response">响应消息</param>
+        public void Dispatch(ResponseMessage response)
         {
-            if (message == null)
+            if (response == null)
                 return;
 
-            if (!_routes.TryGetValue(message.CmdMerge, out var handler) || handler == null)
+            if (!_routes.TryGetValue(response.CmdInfo, out var handler) || handler == null)
                 return;
 
             // 获取所有订阅者
@@ -168,23 +153,21 @@ namespace Pisces.Client.Sdk
             {
                 try
                 {
-                    ((Action<ExternalMessage>)subscriber).Invoke(message);
+                    ((Action<ResponseMessage>)subscriber).Invoke(response);
                 }
                 catch (Exception ex)
                 {
-                    GameLogger.LogError($"[MessageRouter] 处理器异常 cmdMerge {message.CmdInfo.ToString()}: {ex.Message}\n{ex.StackTrace}");
+                    GameLogger.LogError($"[MessageRouter] 处理器异常 cmdMerge {response.CmdInfo.ToString()}: {ex.Message}\n{ex.StackTrace}");
 
                     // 触发异常事件，让外部可以处理（如统计、上报等）
                     try
                     {
-                        OnDispatchError?.Invoke(message.CmdInfo, ex);
+                        OnDispatchError?.Invoke(response.CmdInfo, ex);
                     }
                     catch
                     {
                         // 忽略事件处理器自身的异常
                     }
-
-                    // 继续处理其他订阅者，不中断分发流程
                 }
             }
         }
@@ -251,10 +234,10 @@ namespace Pisces.Client.Sdk
 
             private MessageRouter _router;
             private readonly int _cmdMerge;
-            private Action<ExternalMessage> _handler;
+            private Action<ResponseMessage> _handler;
             private bool _disposed;
 
-            public Subscription(MessageRouter router, int cmdMerge, Action<ExternalMessage> handler)
+            public Subscription(MessageRouter router, int cmdMerge, Action<ResponseMessage> handler)
             {
                 _router = router;
                 _cmdMerge = cmdMerge;

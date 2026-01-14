@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Pisces.Client.Network.Core;
+using Pisces.Client.Sdk;
 using Pisces.Protocol;
 
 namespace Pisces.Client.Network
@@ -42,9 +43,19 @@ namespace Pisces.Client.Network
         void Close();
 
         /// <summary>
-        /// 发送消息
+        ///  发送请求
         /// </summary>
-        UniTask SendAsync(ExternalMessage message, CancellationToken cancellationToken = default);
+        /// <param name="command"></param>
+        /// <returns></returns>
+        PiscesCode SendRequest(RequestCommand command);
+
+        /// <summary>
+        ///  发送请求
+        /// </summary>
+        /// <param name="command"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        UniTask<ResponseMessage> RequestAsync(RequestCommand command, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 连接状态变化事件
@@ -54,7 +65,7 @@ namespace Pisces.Client.Network
         /// <summary>
         /// 收到消息事件
         /// </summary>
-        event Action<ExternalMessage> OnMessageReceived;
+        event Action<ResponseMessage> OnMessageReceived;
 
         /// <summary>
         /// 连接错误事件

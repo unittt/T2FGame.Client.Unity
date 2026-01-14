@@ -19,7 +19,7 @@ namespace Pisces.Client.Sdk
         /// <summary>
         /// 获取游戏客户端实例
         /// </summary>
-        public GameClient Client => _client;
+        internal GameClient Client => _client;
 
         /// <summary>
         /// 获取当前连接状态
@@ -88,8 +88,8 @@ namespace Pisces.Client.Sdk
             if (isSameAddress)
             {
                 var state = _client.State;
-                if (state is ConnectionState.Connected or 
-                    ConnectionState.Connecting or 
+                if (state is ConnectionState.Connected or
+                    ConnectionState.Connecting or
                     ConnectionState.Reconnecting)
                 {
                     GameLogger.LogDebug($"[ConnectionManager] 已连接到 {host}:{port}，跳过");

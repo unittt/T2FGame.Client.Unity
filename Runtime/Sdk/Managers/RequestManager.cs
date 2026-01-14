@@ -21,8 +21,7 @@ namespace Pisces.Client.Sdk
 
         public RequestManager(ConnectionManager connectionManager)
         {
-            _connectionManager =
-                connectionManager ?? throw new ArgumentNullException(nameof(connectionManager));
+            _connectionManager = connectionManager ?? throw new ArgumentNullException(nameof(connectionManager));
         }
 
         #region 异步请求 (Async)

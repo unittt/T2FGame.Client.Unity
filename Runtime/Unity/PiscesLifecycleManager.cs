@@ -10,18 +10,18 @@ namespace Pisces.Client.Unity
     /// </summary>
     internal static class PiscesLifecycleManager
     {
-        private static bool _isQuitting;
+
+        private static bool _isPlaying;
 
         /// <summary>
-        /// 是否正在退出应用
+        /// 是否在运行中
         /// </summary>
-        public static bool IsQuitting => _isQuitting;
+        public static bool IsPlaying => _isPlaying;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Initialize()
         {
-            _isQuitting = false;
-
+            _isPlaying = true;
             // 订阅退出事件
             Application.quitting += OnApplicationQuitting;
 
@@ -33,7 +33,7 @@ namespace Pisces.Client.Unity
 
         private static void OnApplicationQuitting()
         {
-            _isQuitting = true;
+            _isPlaying = false;
             CleanupSdk();
         }
 
@@ -42,12 +42,12 @@ namespace Pisces.Client.Unity
         {
             if (state == UnityEditor.PlayModeStateChange.ExitingPlayMode)
             {
-                _isQuitting = true;
+                _isPlaying = false;
                 CleanupSdk();
             }
             else if (state == UnityEditor.PlayModeStateChange.EnteredPlayMode)
             {
-                _isQuitting = false;
+                _isPlaying = true;
             }
         }
 #endif

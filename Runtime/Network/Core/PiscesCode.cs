@@ -3,12 +3,12 @@ using System.Collections.Generic;
 namespace Pisces.Client.Network.Core
 {
     /// <summary>
-    /// 消息发送结果
+    /// Pisces 状态码
     /// </summary>
-    public enum SendResult
+    public enum PiscesCode
     {
         /// <summary>
-        /// 发送成功（已加入发送队列）
+        /// 发送
         /// </summary>
         Success,
         /// <summary>
@@ -45,29 +45,29 @@ namespace Pisces.Client.Network.Core
         DuplicateMsgId
     }
 
-    internal static class SendResultHelper
+    internal static class PiscesCodeHelper
     {
-        private static readonly Dictionary<SendResult, string> _resultMapping = new();
+        private static readonly Dictionary<PiscesCode, string> _resultMapping = new();
 
-        static SendResultHelper()
+        static PiscesCodeHelper()
         {
-            Mapping(SendResult.Success, "Success");
-            Mapping(SendResult.ClientClosed, "客户端已关闭");
-            Mapping(SendResult.NotConnected, "未连接到服务器");
-            Mapping(SendResult.InvalidMessage, "无效的消息");
-            Mapping(SendResult.ChannelError, "通道发送失败");
-            Mapping(SendResult.RateLimited, "发送频率超限");
-            Mapping(SendResult.RequestLocked, "请求已锁定（重复请求）");
-            Mapping(SendResult.Timeout, "请求超时");
-            Mapping(SendResult.DuplicateMsgId, "重复的消息ID");
+            Mapping(PiscesCode.Success, "Success");
+            Mapping(PiscesCode.ClientClosed, "客户端已关闭");
+            Mapping(PiscesCode.NotConnected, "未连接到服务器");
+            Mapping(PiscesCode.InvalidMessage, "无效的消息");
+            Mapping(PiscesCode.ChannelError, "通道发送失败");
+            Mapping(PiscesCode.RateLimited, "发送频率超限");
+            Mapping(PiscesCode.RequestLocked, "请求已锁定（重复请求）");
+            Mapping(PiscesCode.Timeout, "请求超时");
+            Mapping(PiscesCode.DuplicateMsgId, "重复的消息ID");
         }
 
-        private static void Mapping(SendResult result, string msg)
+        private static void Mapping(PiscesCode result, string msg)
         {
             _resultMapping[result] = msg;
         }
 
-        public static string GetMessage(this SendResult result)
+        public static string GetMessage(this PiscesCode result)
         {
             _resultMapping.TryGetValue(result, out var msg);
             return msg;

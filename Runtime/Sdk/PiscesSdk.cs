@@ -91,9 +91,9 @@ namespace Pisces.Client.Sdk
         public event Action<ConnectionState> OnStateChanged;
 
         /// <summary>
-        /// 收到服务器推送消息事件（原始消息）
+        /// 收到服务器推送消息事件
         /// </summary>
-        public event Action<ExternalMessage> OnMessageReceived;
+        public event Action<ResponseMessage> OnMessageReceived;
 
         /// <summary>
         /// 连接错误事件
@@ -457,7 +457,7 @@ namespace Pisces.Client.Sdk
             OnStateChanged?.Invoke(state);
         }
 
-        private void HandleMessageReceived(ExternalMessage message)
+        private void HandleMessageReceived(ResponseMessage message)
         {
             // 先触发通用的消息接收事件
             OnMessageReceived?.Invoke(message);
@@ -550,7 +550,7 @@ namespace Pisces.Client.Sdk
 
             GameLogger.LogDebug("[PiscesSdk] SDK 已释放");
         }
-        
+
         /// <summary>
         /// 重置 SDK 单例（主要用于测试）
         /// </summary>

@@ -48,7 +48,7 @@ namespace Pisces.Client.Sdk
         public void Initialize(GameClientOptions options)
         {
             if (_disposed)
-                PiscesClientCode.ClientClosed.ThrowIfNotSuccess();
+                PiscesClientCode.ClientClosed.ThrowIfFailed();
 
             if (_client != null)
             {
@@ -159,12 +159,12 @@ namespace Pisces.Client.Sdk
         {
             if (_disposed)
             {
-                PiscesClientCode.ClientClosed.ThrowIfNotSuccess();
+                PiscesClientCode.ClientClosed.ThrowIfFailed();
             }
 
             if (_client == null)
             {
-                PiscesClientCode.NotInitialized.ThrowIfNotSuccess();
+                PiscesClientCode.NotInitialized.ThrowIfFailed();
             }
         }
 

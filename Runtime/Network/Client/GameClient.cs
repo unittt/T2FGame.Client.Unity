@@ -82,7 +82,7 @@ namespace Pisces.Client.Network
         public async UniTask ConnectAsync()
         {
             if (_disposed || _isClosed)
-                PiscesClientCode.ClientClosed.ThrowIfNotSuccess();
+                PiscesClientCode.ClientClosed.ThrowIfFailed();
 
             // 使用状态机检查是否可以连接
             if (!_stateMachine.CanConnect)
@@ -97,8 +97,7 @@ namespace Pisces.Client.Network
                     GameLogger.LogWarning("[GameClient] 正在连接中");
                     return;
                 }
-                // throw new InvalidOperationException($"当前状态 {State} 不允许连接");
-                PiscesClientCode.ClientClosed.ThrowIfNotSuccess();
+                PiscesClientCode.ConnectionFailed.ThrowIfFailed($"State {State} does not allow connection.");
             }
 
             // 尝试转换到 Connecting 状态
@@ -139,15 +138,12 @@ namespace Pisces.Client.Network
                 // 连接成功，完成后续处理
                 FinalizeConnection(newChannel, isReconnect: false);
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException ex)// 4. 精确映射异常
             {
                 CleanupChannel(newChannel);
 
-                var ex = new TimeoutException(
-                    $"Connect timeout after {_options.ConnectTimeoutMs}ms to {_options.Host}:{_options.Port}"
-                );
                 OnError?.Invoke(ex);
-                throw ex;
+                PiscesClientCode.Timeout.ThrowIfFailed($"Connect timeout to {_options.Host}:{_options.Port}", ex);
             }
             catch (Exception ex)
             {
@@ -156,7 +152,7 @@ namespace Pisces.Client.Network
                 _stateMachine.TryTransition(ConnectionState.Disconnected, out _);
                 GameLogger.LogError($"[GameClient] 连接失败: {ex.Message}");
                 OnError?.Invoke(ex);
-                throw;
+                PiscesClientCode.ConnectionFailed.ThrowIfFailed(null,ex);
             }
         }
 

@@ -1,5 +1,6 @@
 using System;
 using System.Buffers.Binary;
+using Pisces.Client.Sdk;
 using Pisces.Protocol;
 
 namespace Pisces.Client.Network.Core
@@ -50,10 +51,11 @@ namespace Pisces.Client.Network.Core
             var bodyLength = BinaryPrimitives.ReadInt32BigEndian(packet.AsSpan(0, HeaderSize));
 
             if (bodyLength is < 0 or > MaxBodySize)
-                throw new InvalidOperationException($"Invalid body length: {bodyLength}");
+                PiscesClientCode.DeserializationError.ThrowIfFailed($"Invalid body length: {bodyLength}");
+
 
             if (packet.Length < HeaderSize + bodyLength)
-                throw new InvalidOperationException("Incomplete packet");
+                PiscesClientCode.DeserializationError.ThrowIfFailed("Incomplete packet");
 
             return DecodeBody(packet, HeaderSize, bodyLength);
         }
@@ -71,7 +73,7 @@ namespace Pisces.Client.Network.Core
                 throw new ArgumentNullException(nameof(buffer));
 
             if (bodyLength is < 0 or > MaxBodySize)
-                throw new InvalidOperationException($"Invalid body length: {bodyLength}");
+                PiscesClientCode.DeserializationError.ThrowIfFailed($"Invalid body length: {bodyLength}");
 
             if (offset < 0 || offset + bodyLength > buffer.Length)
                 throw new ArgumentOutOfRangeException(nameof(offset));

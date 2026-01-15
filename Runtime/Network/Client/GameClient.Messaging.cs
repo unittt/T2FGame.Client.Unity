@@ -96,9 +96,9 @@ namespace Pisces.Client.Network
             try
             {
                 // 1. 基础校验
-                if (command == null) PiscesClientCode.InvalidRequestCommand.ThrowIfNotSuccess();
-                if (_disposed || _isClosed) PiscesClientCode.ClientClosed.ThrowIfNotSuccess();
-                if (!IsConnected) PiscesClientCode.NotConnected.ThrowIfNotSuccess();
+                if (command == null) PiscesClientCode.InvalidRequestCommand.ThrowIfFailed();
+                if (_disposed || _isClosed) PiscesClientCode.ClientClosed.ThrowIfFailed();
+                if (!IsConnected) PiscesClientCode.NotConnected.ThrowIfFailed();
 
                 PendingRequestInfo pendingInfo = null;
 
@@ -107,7 +107,7 @@ namespace Pisces.Client.Network
                 {
                     if (!TryLockRoute(command.CmdInfo))
                     {
-                        PiscesClientCode.RequestLocked.ThrowIfNotSuccess(command);
+                        PiscesClientCode.RequestLocked.ThrowIfFailed(command);
                     }
 
                     routeLocked = true;
@@ -115,7 +115,7 @@ namespace Pisces.Client.Network
                     if (_rateLimiter != null && !_rateLimiter.TryAcquire())
                     {
                         _statistics.RecordRateLimited();
-                        PiscesClientCode.RateLimited.ThrowIfNotSuccess(command);
+                        PiscesClientCode.RateLimited.ThrowIfFailed(command);
                     }
                 }
 
@@ -133,7 +133,7 @@ namespace Pisces.Client.Network
 
                     if (!_pendingRequests.TryAdd(command.MsgId, pendingInfo))
                     {
-                         PiscesClientCode.DuplicateMsgId.ThrowIfNotSuccess(command);
+                         PiscesClientCode.DuplicateMsgId.ThrowIfFailed(command);
                     }
                     pendingAdded = true;
                 }
@@ -145,7 +145,7 @@ namespace Pisces.Client.Network
                     _statistics.RecordSendFailed();
                     GameLogger.LogWarning($"[GameClient] 发送失败: {command.CmdInfo}, MsgId={command.MsgId}, 原因={sendResult}");
                     OnSendFailed?.Invoke(command.CmdInfo, command.MsgId, sendResult);
-                    sendResult.ThrowIfNotSuccess(command);
+                    sendResult.ThrowIfFailed(command);
                 }
 
                 // 5. 统计记录
@@ -166,7 +166,7 @@ namespace Pisces.Client.Network
                     }
                     catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
                     {
-                        PiscesClientCode.Timeout.ThrowIfNotSuccess(command);
+                        PiscesClientCode.Timeout.ThrowIfFailed(command);
                     }
                 }
                 return response;

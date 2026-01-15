@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace Pisces.Client.Sdk
@@ -57,25 +58,26 @@ namespace Pisces.Client.Sdk
 
 
         #region  异常处理
+
         /// <summary>
         /// 如果状态码不是成功，则抛出异常
         /// </summary>
-        public static void ThrowIfNotSuccess(this PiscesClientCode clientCode, string message = null)
+        public static void ThrowIfFailed(this PiscesClientCode clientCode, string message = null,Exception inner = null)
         {
             if (clientCode != PiscesClientCode.Success)
             {
-                throw new PiscesClientException(clientCode, message);
+                throw new PiscesClientException(clientCode, message,inner);
             }
         }
 
         /// <summary>
         /// 如果状态码不是成功，则抛出包含命令上下文的异常
         /// </summary>
-        public static void ThrowIfNotSuccess(this PiscesClientCode clientCode, RequestCommand command, string message = null)
+        public static void ThrowIfFailed(this PiscesClientCode clientCode, RequestCommand command, string message = null,Exception inner = null)
         {
             if (clientCode != PiscesClientCode.Success)
             {
-                throw new PiscesClientException(clientCode, command, message);
+                throw new PiscesClientException(clientCode, command, message,inner);
             }
         }
         #endregion

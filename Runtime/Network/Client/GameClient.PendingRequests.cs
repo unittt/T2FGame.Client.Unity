@@ -3,11 +3,10 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using Pisces.Client.Network.Core;
 using Pisces.Client.Sdk;
+using Pisces.Client.Unity;
 using Pisces.Client.Utils;
 using Pisces.Protocol;
-using UnityEngine;
 
 namespace Pisces.Client.Network
 {
@@ -84,13 +83,13 @@ namespace Pisces.Client.Network
         {
             var timeoutTicks = (long)(_options.RequestTimeoutMs * CleanupTimeoutMultiplier * Stopwatch.Frequency / 1000);
 
-            while (!cancellationToken.IsCancellationRequested && Application.isPlaying)
+            while (!cancellationToken.IsCancellationRequested && PiscesLifecycleManager.IsPlaying)
             {
                 try
                 {
                     await UniTask.Delay(CleanupIntervalMs, cancellationToken: cancellationToken);
 
-                    if (!Application.isPlaying)
+                    if (!PiscesLifecycleManager.IsPlaying)
                         break;
 
                     CleanupStalePendingRequests(timeoutTicks);
@@ -177,7 +176,7 @@ namespace Pisces.Client.Network
         /// 清理所有待处理请求
         /// </summary>
         /// <param name="result">失败原因</param>
-        private void ClearPendingRequests(PiscesCode result)
+        private void ClearPendingRequests(PiscesClientCode result)
         {
             var count = _pendingRequests.Count;
             if (count == 0) return;
@@ -187,7 +186,7 @@ namespace Pisces.Client.Network
                 try
                 {
                     var info = kvp.Value;
-                    var exception = new PiscesException(result, info.CmdInfo, info.MsgId);
+                    var exception = new PiscesClientException(result, info.CmdInfo, info.MsgId);
                     info.Tcs?.TrySetException(exception);
                 }
                 catch (Exception ex)

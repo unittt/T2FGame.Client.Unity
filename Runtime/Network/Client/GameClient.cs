@@ -82,7 +82,7 @@ namespace Pisces.Client.Network
         public async UniTask ConnectAsync()
         {
             if (_disposed || _isClosed)
-                throw new PiscesException(PiscesCode.ClientClosed);
+                PiscesClientCode.ClientClosed.ThrowIfNotSuccess();
 
             // 使用状态机检查是否可以连接
             if (!_stateMachine.CanConnect)
@@ -97,7 +97,8 @@ namespace Pisces.Client.Network
                     GameLogger.LogWarning("[GameClient] 正在连接中");
                     return;
                 }
-                throw new InvalidOperationException($"当前状态 {State} 不允许连接");
+                // throw new InvalidOperationException($"当前状态 {State} 不允许连接");
+                PiscesClientCode.ClientClosed.ThrowIfNotSuccess();
             }
 
             // 尝试转换到 Connecting 状态
@@ -238,7 +239,7 @@ namespace Pisces.Client.Network
 
             _stateMachine.TryTransition(targetState, out _);
             _statistics.RecordDisconnected();
-            ClearPendingRequests(PiscesCode.ClientClosed);
+            ClearPendingRequests(PiscesClientCode.ClientClosed);
             ClearLockedRoutes();
         }
 
@@ -279,7 +280,7 @@ namespace Pisces.Client.Network
             _stateMachine.TryTransition(ConnectionState.Disconnected, out _);
             _statistics.RecordDisconnected();
 
-            ClearPendingRequests(PiscesCode.NotConnected);
+            ClearPendingRequests(PiscesClientCode.NotConnected);
             ClearLockedRoutes();
 
             // 尝试自动重连

@@ -139,7 +139,7 @@ namespace Pisces.Client.Sdk
         public void Initialize(GameClientOptions options)
         {
             if (_disposed)
-                throw new PiscesException(PiscesCode.ClientClosed);
+                PiscesClientCode.ClientClosed.ThrowIfNotSuccess();
 
             if (_initialized)
             {
@@ -480,10 +480,10 @@ namespace Pisces.Client.Sdk
         private void EnsureInitialized()
         {
             if (_disposed)
-                throw new PiscesException(PiscesCode.ClientClosed);
+                PiscesClientCode.ClientClosed.ThrowIfNotSuccess();
 
             if (!_initialized)
-                throw new PiscesException(PiscesCode.NotInitialized);
+                PiscesClientCode.NotInitialized.ThrowIfNotSuccess();
         }
 
         #endregion

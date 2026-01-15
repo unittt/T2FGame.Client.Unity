@@ -1,61 +1,41 @@
 using System;
-using Pisces.Client.Network.Core;
 using Pisces.Protocol;
 
 namespace Pisces.Client.Sdk
 {
-    /// <summary>
-    /// Pisces 框架通用异常
-    /// 涵盖了发送失败、协议错误、连接中断、超时等所有框架级异常
+    //// <summary>
+    ///  Pisces 框架异常基类
     /// </summary>
     public class PiscesException : Exception
     {
         /// <summary>
-        /// 状态码
-        /// </summary>
-        public PiscesCode ErrorCode { get; }
-
-        /// <summary>
-        /// 命令标识（可选）
+        /// 命令标识（如果有操作上下文）
         /// </summary>
         public CmdInfo? CmdInfo { get; }
 
         /// <summary>
-        /// 消息ID（可选）
+        /// 消息ID（如果有操作上下文）
         /// </summary>
         public int MsgId { get; }
 
-        public PiscesException(PiscesCode errorCode, string message = null) : base(message ?? errorCode.GetMessage())
-        {
-            ErrorCode = errorCode;
-        }
+        /// <summary>
+        /// 是否包含操作上下文（命令和消息ID）
+        /// </summary>
+        public bool HasOperationContext => CmdInfo.HasValue;
 
-        public PiscesException(PiscesCode errorCode, RequestCommand command, string message = null): base(message ?? GetDefaultMessage(errorCode, command.CmdInfo, command.MsgId))
+        protected PiscesException(string message, CmdInfo? cmdInfo = null, int msgId = 0, Exception inner = null) : base(message, inner)
         {
-            ErrorCode = errorCode;
-            CmdInfo = command.CmdInfo;
-            MsgId = command.MsgId;
-        }
-
-        public PiscesException(PiscesCode errorCode, CmdInfo cmdInfo, int msgId = 0, string message = null) : base(message ?? GetDefaultMessage(errorCode, cmdInfo, msgId))
-        {
-            ErrorCode = errorCode;
             CmdInfo = cmdInfo;
             MsgId = msgId;
         }
 
-
-        private static string GetDefaultMessage(PiscesCode result, CmdInfo cmdInfo, int msgId)
+        /// <summary>
+        /// 格式化上下文信息：(Cmd: Login, MsgId: 101)
+        /// </summary>
+        protected string GetContextSuffix()
         {
-            var baseMsg = result.GetMessage();
-            return $"{baseMsg} (Cmd={cmdInfo}, MsgId={msgId})";
-        }
-
-        public override string ToString()
-        {
-            return CmdInfo.HasValue
-                ? $"PiscesSendException: Result={ErrorCode}, Cmd={CmdInfo}, MsgId={MsgId}, Message={Message}"
-                : $"PiscesSendException: Result={ErrorCode}, Message={Message}";
+            if (!HasOperationContext) return string.Empty;
+            return $" (Cmd: {CmdInfo}, MsgId: {MsgId})";
         }
     }
 }

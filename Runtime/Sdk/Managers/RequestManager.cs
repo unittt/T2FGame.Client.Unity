@@ -2,7 +2,6 @@ using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Google.Protobuf;
-using Pisces.Client.Network.Core;
 using Pisces.Client.Utils;
 
 namespace Pisces.Client.Sdk
@@ -158,7 +157,7 @@ namespace Pisces.Client.Sdk
             if (!_connectionManager.IsConnected)
             {
                 GameLogger.LogWarning("[RequestManager] 未连接，无法发送请求");
-                throw new PiscesException(PiscesCode.NotConnected);
+                PiscesClientCode.NotConnected.ThrowIfNotSuccess();
             }
 
             if (callback == null)
@@ -194,13 +193,13 @@ namespace Pisces.Client.Sdk
         private void EnsureConnected()
         {
             if (!_connectionManager.IsConnected)
-                throw new PiscesException(PiscesCode.NotConnected);
+                PiscesClientCode.NotConnected.ThrowIfNotSuccess();
         }
 
         private static void ThrowIfError(ResponseMessage response)
         {
             if (response.HasError)
-                throw new PiscesResponseException(response);
+                throw new PiscesServerException(response);
         }
 
         #endregion

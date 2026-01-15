@@ -30,7 +30,7 @@ namespace Pisces.Client.Network
         /// 消息发送失败事件
         /// 参数：CmdInfo, MsgId, 失败原因
         /// </summary>
-        public event Action<CmdInfo, int, PiscesCode> OnSendFailed;
+        public event Action<CmdInfo, int, PiscesClientCode> OnSendFailed;
 
 
         /// <summary>
@@ -96,9 +96,9 @@ namespace Pisces.Client.Network
             try
             {
                 // 1. 基础校验
-                if (command == null) throw new PiscesException(PiscesCode.InvalidRequestCommand);
-                if (_disposed || _isClosed) throw new PiscesException(PiscesCode.ClientClosed,command);
-                if (!IsConnected) throw new PiscesException(PiscesCode.NotConnected,command);
+                if (command == null) PiscesClientCode.InvalidRequestCommand.ThrowIfNotSuccess();
+                if (_disposed || _isClosed) PiscesClientCode.ClientClosed.ThrowIfNotSuccess();
+                if (!IsConnected) PiscesClientCode.NotConnected.ThrowIfNotSuccess();
 
                 PendingRequestInfo pendingInfo = null;
 
@@ -107,7 +107,7 @@ namespace Pisces.Client.Network
                 {
                     if (!TryLockRoute(command.CmdInfo))
                     {
-                        throw new PiscesException(PiscesCode.RequestLocked,command);
+                        PiscesClientCode.RequestLocked.ThrowIfNotSuccess(command);
                     }
 
                     routeLocked = true;
@@ -115,7 +115,7 @@ namespace Pisces.Client.Network
                     if (_rateLimiter != null && !_rateLimiter.TryAcquire())
                     {
                         _statistics.RecordRateLimited();
-                        throw new PiscesException(PiscesCode.RateLimited,command);
+                        PiscesClientCode.RateLimited.ThrowIfNotSuccess(command);
                     }
                 }
 
@@ -133,20 +133,19 @@ namespace Pisces.Client.Network
 
                     if (!_pendingRequests.TryAdd(command.MsgId, pendingInfo))
                     {
-                         throw new PiscesException(PiscesCode.DuplicateMsgId,command);
+                         PiscesClientCode.DuplicateMsgId.ThrowIfNotSuccess(command);
                     }
                     pendingAdded = true;
                 }
 
                 // 4. 发送消息
                 var sendResult = SendInternal(command, out var packetLength);
-                if (sendResult != PiscesCode.Success)
+                if (sendResult != PiscesClientCode.Success)
                 {
                     _statistics.RecordSendFailed();
                     GameLogger.LogWarning($"[GameClient] 发送失败: {command.CmdInfo}, MsgId={command.MsgId}, 原因={sendResult}");
                     OnSendFailed?.Invoke(command.CmdInfo, command.MsgId, sendResult);
-
-                    throw new PiscesException(sendResult, command);
+                    sendResult.ThrowIfNotSuccess(command);
                 }
 
                 // 5. 统计记录
@@ -167,7 +166,7 @@ namespace Pisces.Client.Network
                     }
                     catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
                     {
-                        throw new PiscesException(PiscesCode.Timeout,command);
+                        PiscesClientCode.Timeout.ThrowIfNotSuccess(command);
                     }
                 }
                 return response;
@@ -192,7 +191,7 @@ namespace Pisces.Client.Network
 
         #region 内部发送实现
 
-        private PiscesCode SendInternal(RequestCommand command, out int packetLength)
+        private PiscesClientCode SendInternal(RequestCommand command, out int packetLength)
         {
             var message = ReferencePool<ExternalMessage>.Spawn();
             message.MessageType = command.MessageType;
@@ -206,11 +205,11 @@ namespace Pisces.Client.Network
             if (!_channel.Send(packet))
             {
                 packetLength = 0;
-                return PiscesCode.ChannelError;
+                return PiscesClientCode.ChannelError;
             }
 
             packetLength = packet.Length;
-            return PiscesCode.Success;
+            return PiscesClientCode.Success;
         }
 
         #endregion
